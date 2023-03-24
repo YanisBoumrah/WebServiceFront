@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import axios from 'axios';
 import EditableCell from './EditableCell';
 
 const Table = styled.table`
@@ -30,43 +31,55 @@ const Table = styled.table`
   }
 `;
 
-const TableView = ({ table, data, onDataChange }) => {
-    const handleCellValueChange = (rowId, column, newValue) => {
-      const updatedData = JSON.parse(JSON.stringify(data));
-      const database = updatedData.databases.find((db) => db.tables.includes(table));
-      const rowIndex = table.rows.findIndex((row) => row.id === rowId);
-  
-      if (rowIndex !== -1) {
-        table.rows[rowIndex].data[column] = newValue;
-        onDataChange(updatedData);
+const TableView = ({ selectedDatabase, selectedTable }) => {
+  const [collections, setCollections] = useState([]);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const response = await axios.get(
+          `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
+        );
+        setCollections(response.data);
+      } catch (error) {
+        console.error('Failed to fetch collections:', error);
       }
     };
-      
+
+    if (selectedDatabase && selectedTable) {
+      fetchCollections();
+    }
+  }, [selectedDatabase, selectedTable]);
+
   return (
     <React.Fragment>
-      <h3>Table: {table.name}</h3>
+      <h3>Table: {selectedTable.name}</h3>
       <Table>
         <thead>
           <tr>
-            {table.columns.map((column, index) => (
-              <th key={index}>{column}</th>
+            {/* Replace "column" with the appropriate property from your data structure */}
+            {collections.map((column, index) => (
+              <th key={index}>{column.name}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-      {table.rows.map((row) => (
-        <tr key={row.id}>
-          {table.columns.map((column, index) => (
-            <td key={index}>
-              <EditableCell
-                value={row.data[column]}
-                onValueChange={(newValue) => handleCellValueChange(row.id, column, newValue)}
-              />
-            </td>
+          {/* Replace "row" and "data" with the appropriate properties from your data structure */}
+          {collections.map((row) => (
+            <tr key={row.id}>
+              {collections.map((column, index) => (
+                <td key={index}>
+                  <EditableCell
+                    value={row.data[column.name]}
+                    onValueChange={(newValue) =>
+                      console.log('Handle cell value change', newValue)
+                    }
+                  />
+                </td>
+              ))}
+            </tr>
           ))}
-        </tr>
-      ))}
-    </tbody>
+        </tbody>
       </Table>
     </React.Fragment>
   );

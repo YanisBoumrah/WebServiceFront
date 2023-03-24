@@ -8,10 +8,12 @@ const MainViewContainer = styled.div`
   min-height: 100vh;
 `;
 
-const MainView = ({ selectedTable }) => {
+const MainView = ({ selectedTable, selectedDatabase }) => {
   return (
     <MainViewContainer>
-      {selectedTable && <TableView table={selectedTable} />}
+      {selectedTable && selectedDatabase && (
+        <TableView selectedDatabase={selectedDatabase} selectedTable={selectedTable} />
+      )}
     </MainViewContainer>
   );
 };

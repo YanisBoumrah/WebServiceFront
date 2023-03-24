@@ -1,5 +1,10 @@
-import React from 'react';
+import React ,{useState,useEffect} from 'react';
 import styled from 'styled-components';
+import {BsDatabaseFillAdd} from 'react-icons/bs';
+import {IoMdAdd} from 'react-icons/io';
+import{BsTrash} from 'react-icons/bs';
+import axios from 'axios';
+
 
 const SidebarContainer = styled.div`
   background-color: #333;
@@ -13,52 +18,303 @@ const SidebarContainer = styled.div`
   top: 70px;
 `;
 
-const SidebarItem = styled.div`
-  color: #fff;
+const DatabaseItem = styled.div`
   cursor: pointer;
-  margin-bottom: 5px;
-  &:hover {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+
+  ${({ isSelected }) =>
+    isSelected &&
+    `
+    font-weight: bold;
     color: #009879;
+  `}
+`;
+
+const IconHolder = styled.div`
+display: flex;
+align-items: center;
+justify-content: space-between;
+width: 100%;
+`
+
+const TableItem = styled.div`
+  cursor: pointer;
+  padding: 5px 0 5px 20px;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    background-color: #f7f7f7;
+  }
+`;
+const SectionTitle = styled.h3`
+  margin: 0;
+  padding: 0 0 10px;
+  font-size: 1.2em;
+  display: flex;
+  align-items: center;
+`;
+
+const AddButton = styled.button`
+  background-color: transparent;
+  color: #009879;
+  border: none;
+  font-size: 1.2em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+
+  &:hover {
+    color: #007b63;
   }
 `;
 
-const Sidebar = ({ data, selectedDatabase, setSelectedDatabase, setSelectedTable }) => {
-    const handleDatabaseClick = (database) => {
-        if (selectedDatabase === database) {
-          setSelectedDatabase(null);
-          setSelectedTable(null);
-        } else {
-          setSelectedDatabase(database);
-          setSelectedTable(null);
-        }
-      };
-      
+const RecycleBinButton = styled.button`
+  background-color: transparent;
+  border: none;
+  font-size: 1.2em;
+  color: #909090;
+  cursor: pointer;
 
-  const handleTableClick = (table) => {
-    setSelectedTable(table);
+  &:hover {
+    color: #707070;
+  }
+`;
+const ModalContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+`;
+
+const ModalContent = styled.div`
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: red;
+  padding: 20px;
+  border-radius: 5px;
+  width: 300px;
+`;
+
+const ModalInput = styled.input`
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+`;
+
+const ModalButton = styled.button`
+  background-color: ${props => props.primary ? '#009879' : '#ccc'};
+  color: #fff;
+  padding: 10px;
+  margin-right: ${props => props.primary ? '10px' : '0'};
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+`;
+
+const Modal = ({ show, onClose, onSave }) => {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleSave = () => {
+    onSave(inputValue);
+    setInputValue('');
+    onClose();
   };
 
+  const handleCancel = () => {
+    setInputValue('');
+    onClose();
+  };
+
+  if (!show) return null;
+
+  return (
+    <ModalContainer>
+      <ModalContent>
+        <ModalInput
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          placeholder="Enter name"
+        />
+        <div>
+        <ModalButton primary onClick={handleSave}>
+          Save
+        </ModalButton>
+        <ModalButton onClick={handleCancel}>Cancel</ModalButton>
+        </div>
+        
+      </ModalContent>
+    </ModalContainer>
+  );
+};
+
+const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) => {
+  const [databases, setDatabases] = useState([]);
+
+  useEffect(() => {
+    fetchDatabases();
+  }, []);
+
+  const fetchDatabases = () => {
+    axios.get('http://127.0.0.1:8000/')
+    .then((response) => {
+      if (Array.isArray(response.data.databases)) {
+        setDatabases(response.data.databases);
+      } else {
+        console.error('Received data is not an array:', response.data);
+      }
+    })
+    .catch((error) => {
+      console.error('Failed to fetch databases:', error);
+    });
+  
+  };
+
+  const fetchTables = (databaseName) => {
+    axios
+      .get(`http://127.0.0.1:8000/${databaseName}`)
+      .then((response) => {
+        console.log('Fetched tables:', response.data);
+        const updatedDatabases = databases.map((database) =>
+          database.name === databaseName
+            ? { ...database, tables: response.data }
+            : database
+        );
+        setDatabases(updatedDatabases);
+      })
+      .catch((error) => console.error('Error fetching tables:', error));
+  };
+
+  const fetchCollections = (databaseName, tableName) => {
+    axios
+      .get(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
+      .then((response) => {
+        console.log('Fetched collections:', response.data);
+        // Handle the fetched collections data here
+      })
+      .catch((error) => console.error('Error fetching collections:', error));
+  };
+
+  const handleDatabaseClick = (database) => {
+    if (selectedDatabase === database) {
+      setSelectedDatabase(null);
+      setSelectedTable(null);
+    } else {
+      setSelectedDatabase(database);
+      fetchTables(database.name);
+    }
+  };
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState(null);
+  const handleAddDatabaseClick = () => {
+    console.log('Add database');
+    setModalType('database');
+    setShowModal(true);
+  };
+
+  const handleAddTableClick = (database) => {
+    console.log('Add table to', database.name);
+    setModalType('table');
+    setShowModal(true);
+  };
+  const handleDeleteDatabaseClick = (database) => {
+    console.log('Delete database:', database.name);
+    // Implement deleting a database
+  };
+
+  const handleDeleteTableClick = (table) => {
+    console.log('Delete table:', table.name);
+    // Implement deleting a table
+  };
+  const handleSave = (name) => {
+    if (modalType === 'database') {
+      console.log('Add database:', name);
+      // Implement adding a new database
+    } else if (modalType === 'table') {
+      console.log('Add table:', name);
+      // Implement adding a new table
+    }
+  };
   return (
     <SidebarContainer>
-      {data.databases.map((database) => (
-        <React.Fragment key={database.id}>
-          <SidebarItem onClick={() => handleDatabaseClick(database)}>
-            {database.name}
-          </SidebarItem>
-          {selectedDatabase === database &&
-            database.tables.map((table) => (
-              <SidebarItem
-                key={table.id}
-                style={{ marginLeft: "10px" }}
-                onClick={() => handleTableClick(table)}
+    <SectionTitle>
+      Databases
+      <AddButton onClick={handleAddDatabaseClick}>
+        <BsDatabaseFillAdd size={15} />
+      </AddButton>
+    </SectionTitle>
+    {databases.map((database,index) => (
+      <React.Fragment key={database.id}>
+      <DatabaseItem
+    key={index} // Ajout de la clé unique
+    database={database}
+    isSelected={selectedDatabase === database}
+    onClick={() => handleDatabaseClick(database)}
+  >
+          {database.name}
+          <IconHolder>
+            <AddButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddTableClick(database);
+              }}
+            >
+              <IoMdAdd size={15} />
+            </AddButton>
+            <RecycleBinButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteDatabaseClick(database);
+              }}
+            >
+              <BsTrash size={15} />
+            </RecycleBinButton>
+          </IconHolder>
+        </DatabaseItem>
+        {selectedDatabase === database &&
+          database.tables.map((table) => (
+            <TableItem
+              key={table.id}
+              onClick={() => {
+                setSelectedTable(table);
+                fetchCollections(database.name, table.name);
+              }}
+            >
+              {table.name}
+              <IconHolder>
+                <p> </p>
+                <RecycleBinButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteTableClick(table);
+                }}
               >
-                {table.name}
-              </SidebarItem>
-            ))}
-        </React.Fragment>
-      ))}
-    </SidebarContainer>
-  );
+                <BsTrash size={15} />
+              </RecycleBinButton>
+            </IconHolder>
+          </TableItem>
+        ))}
+      </React.Fragment>
+    ))}
+    <Modal
+      show={showModal}
+      onClose={() => setShowModal(false)}
+      onSave={handleSave}
+    />
+  </SidebarContainer>
+);
 };
 
 export default Sidebar;
