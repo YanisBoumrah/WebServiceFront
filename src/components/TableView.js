@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import axios from 'axios';
-import EditableCell from './EditableCell';
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import axios from "axios";
+import EditableCell from "./EditableCell";
 
 const Table = styled.table`
   border-collapse: collapse;
@@ -17,7 +17,8 @@ const Table = styled.table`
     text-align: left;
     font-weight: bold;
   }
-  th, td {
+  th,
+  td {
     padding: 12px 15px;
   }
   tbody tr {
@@ -42,7 +43,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         );
         setCollections(response.data);
       } catch (error) {
-        console.error('Failed to fetch collections:', error);
+        console.error("Failed to fetch collections:", error);
       }
     };
 
@@ -55,30 +56,40 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
     <React.Fragment>
       <h3>Table: {selectedTable.name}</h3>
       <Table>
-        <thead>
-          <tr>
-            {/* Replace "column" with the appropriate property from your data structure */}
-            {collections.map((column, index) => (
-              <th key={index}>{column.name}</th>
-            ))}
-          </tr>
-        </thead>
+      <thead>
+  <tr>
+    {collections && collections.documents ? (
+      Object.keys(collections.documents[Object.keys(collections.documents)[0]]).map((key) => (
+        <th key={key}>{key}</th>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="100%">No collections found.</td>
+      </tr>
+    )}
+  </tr>
+</thead>
         <tbody>
-          {/* Replace "row" and "data" with the appropriate properties from your data structure */}
-          {collections.map((row) => (
-            <tr key={row.id}>
-              {collections.map((column, index) => (
-                <td key={index}>
-                  <EditableCell
-                    value={row.data[column.name]}
-                    onValueChange={(newValue) =>
-                      console.log('Handle cell value change', newValue)
-                    }
-                  />
-                </td>
-              ))}
+          {collections.documents ? (
+            Object.values(collections.documents).map((row) => (
+              <tr key={row.id}>
+                {Object.keys(row).map((column) => (
+                  <td key={column}>
+                    <EditableCell
+                      value={row[column]}
+                      onValueChange={(newValue) =>
+                        console.log("Handle cell value change", newValue)
+                      }
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="100%">No collections found.</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </Table>
     </React.Fragment>

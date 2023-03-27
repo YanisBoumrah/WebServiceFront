@@ -162,6 +162,8 @@ const Modal = ({ show, onClose, onSave }) => {
 
 const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) => {
   const [databases, setDatabases] = useState([]);
+  const [tables, setTables] = useState([]);
+
 
   useEffect(() => {
     fetchDatabases();
@@ -169,40 +171,65 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
 
   const fetchDatabases = () => {
     axios.get('http://127.0.0.1:8000/')
-    .then((response) => {
-      if (Array.isArray(response.data.databases)) {
-        setDatabases(response.data.databases);
-      } else {
-        console.error('Received data is not an array:', response.data);
-      }
-    })
-    .catch((error) => {
-      console.error('Failed to fetch databases:', error);
-    });
+      .then((response) => {
+        if (Array.isArray(response.data.databases)) {
+          const databasesArray = response.data.databases.map((dbName, index) => {
+            return { id: index, name: dbName };
+          });
+          setDatabases(databasesArray);
   
+          // Fetch tables for the first database
+          if (databasesArray.length > 0) {
+            const firstDatabase = databasesArray[0];
+            setSelectedDatabase(firstDatabase);
+            fetchTables(firstDatabase.name);
+          }
+        } else {
+          console.error('Received data is not an object:', response.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to fetch databases:', error);
+      });
   };
+  
+  
 
   const fetchTables = (databaseName) => {
+    if (!databaseName) {
+      console.error("Database name is undefined");
+      return;
+    }
     axios
       .get(`http://127.0.0.1:8000/${databaseName}`)
       .then((response) => {
         console.log('Fetched tables:', response.data);
-        const updatedDatabases = databases.map((database) =>
-          database.name === databaseName
-            ? { ...database, tables: response.data }
-            : database
-        );
-        setDatabases(updatedDatabases);
+        if (response.data && typeof response.data === 'object') {
+          const tablesArray = (response.data.collections).map((tableName, index) => {
+            return { id: index, name: tableName };
+          });
+          setTables(tablesArray);
+  
+          // Fetch collections for each table
+          tablesArray.forEach(table => {
+            fetchCollections(databaseName, table.name);
+          });
+        } else {
+          console.error('Received data is not an object:', response.data);
+        }
       })
       .catch((error) => console.error('Error fetching tables:', error));
   };
+  
 
   const fetchCollections = (databaseName, tableName) => {
     axios
       .get(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
       .then((response) => {
-        console.log('Fetched collections:', response.data);
+        console.log('Fetched collections:', response.data.documents);
         // Handle the fetched collections data here
+        
+
       })
       .catch((error) => console.error('Error fetching collections:', error));
   };
@@ -284,9 +311,9 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
           </IconHolder>
         </DatabaseItem>
         {selectedDatabase === database &&
-          database.tables.map((table) => (
+          tables.map((table, index) => (
             <TableItem
-              key={table.id}
+              key={index}
               onClick={() => {
                 setSelectedTable(table);
                 fetchCollections(database.name, table.name);
