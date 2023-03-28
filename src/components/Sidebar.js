@@ -126,6 +126,7 @@ const ModalButton = styled.button`
 
 const Modal = ({ show, onClose, onSave }) => {
   const [inputValue, setInputValue] = useState('');
+  
 
   const handleSave = () => {
     onSave(inputValue);
@@ -233,6 +234,7 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
       })
       .catch((error) => console.error('Error fetching collections:', error));
   };
+  
 
   const handleDatabaseClick = (database) => {
     if (selectedDatabase === database) {
@@ -243,8 +245,47 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
       fetchTables(database.name);
     }
   };
+
+ 
+  const createDatabase = (name) => {
+    const body = {
+      dbName : name
+    };
+    console.log(body);
+    console.log("hello")
+
+    if(!body){
+      alert("Please enter a database name");
+    }else{
+      axios.post('http://127.0.0.1:8000/', body)
+      .then((response) => {
+        console.log('Database created:', response.data);
+        fetchDatabases();
+      })
+      .catch((error) => console.error('Error creating database:', error));
+    }
+  
+  };
+  
+
+  const createTable = (name) => {
+    const body = {
+      collectionName : name
+    };
+    axios.post(`http://127.0.0.1:8000/${selectedDatabase.name}`, body)
+      .then((response) => {
+        console.log('Table created:', response.data);
+        fetchTables(selectedDatabase.name);
+      })
+      .catch((error) => console.error('Error creating table:', error));
+  };
+
+
+
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null);
+
+
   const handleAddDatabaseClick = () => {
     console.log('Add database');
     setModalType('database');
@@ -267,12 +308,13 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
   };
   const handleSave = (name) => {
     if (modalType === 'database') {
-      console.log('Add database:', name);
-      // Implement adding a new database
+      console.log('Save database:', name);
+      createDatabase(name);
     } else if (modalType === 'table') {
-      console.log('Add table:', name);
-      // Implement adding a new table
+      console.log('Save table:', name);
+      createTable(name);
     }
+    setShowModal(false);
   };
   return (
     <SidebarContainer>
