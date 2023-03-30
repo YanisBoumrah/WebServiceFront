@@ -1,10 +1,9 @@
-import React ,{useState,useEffect} from 'react';
-import styled from 'styled-components';
-import {BsDatabaseFillAdd} from 'react-icons/bs';
-import {IoMdAdd} from 'react-icons/io';
-import{BsTrash} from 'react-icons/bs';
-import axios from 'axios';
-
+import React, { useState, useEffect } from "react";
+import styled from "styled-components";
+import { BsDatabaseFillAdd } from "react-icons/bs";
+import { IoMdAdd } from "react-icons/io";
+import { BsTrash } from "react-icons/bs";
+import axios from "axios";
 
 const SidebarContainer = styled.div`
   background-color: #333;
@@ -12,7 +11,7 @@ const SidebarContainer = styled.div`
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
   width: 250px;
-  height: calc(100vh - 200px); 
+  height: calc(100vh - 200px);
   overflow-y: auto;
   position: sticky;
   top: 70px;
@@ -33,11 +32,11 @@ const DatabaseItem = styled.div`
 `;
 
 const IconHolder = styled.div`
-display: flex;
-align-items: center;
-justify-content: space-between;
-width: 100%;
-`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+`;
 
 const TableItem = styled.div`
   cursor: pointer;
@@ -115,27 +114,26 @@ const ModalInput = styled.input`
 `;
 
 const ModalButton = styled.button`
-  background-color: ${props => props.primary ? '#009879' : '#ccc'};
+  background-color: ${(props) => (props.primary ? "#009879" : "#ccc")};
   color: #fff;
   padding: 10px;
-  margin-right: ${props => props.primary ? '10px' : '0'};
+  margin-right: ${(props) => (props.primary ? "10px" : "0")};
   border: none;
   border-radius: 3px;
   cursor: pointer;
 `;
 
 const Modal = ({ show, onClose, onSave }) => {
-  const [inputValue, setInputValue] = useState('');
-  
+  const [inputValue, setInputValue] = useState("");
 
   const handleSave = () => {
     onSave(inputValue);
-    setInputValue('');
+    setInputValue("");
     onClose();
   };
 
   const handleCancel = () => {
-    setInputValue('');
+    setInputValue("");
     onClose();
   };
 
@@ -146,39 +144,46 @@ const Modal = ({ show, onClose, onSave }) => {
       <ModalContent>
         <ModalInput
           value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
+          onChange={(e) => setInputValue(e.target.value)}
           placeholder="Enter name"
         />
         <div>
-        <ModalButton primary onClick={handleSave}>
-          Save
-        </ModalButton>
-        <ModalButton onClick={handleCancel}>Cancel</ModalButton>
+          <ModalButton primary onClick={handleSave}>
+            Save
+          </ModalButton>
+          <ModalButton onClick={handleCancel}>Cancel</ModalButton>
         </div>
-        
       </ModalContent>
     </ModalContainer>
   );
 };
 
-const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) => {
+const Sidebar = ({
+  selectedDatabase,
+  setSelectedDatabase,
+  setSelectedTable,
+}) => {
   const [databases, setDatabases] = useState([]);
   const [tables, setTables] = useState([]);
-
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState(null);
 
   useEffect(() => {
     fetchDatabases();
   }, []);
 
   const fetchDatabases = () => {
-    axios.get('http://127.0.0.1:8000/')
+    axios
+      .get("http://127.0.0.1:8000/")
       .then((response) => {
         if (Array.isArray(response.data.databases)) {
-          const databasesArray = response.data.databases.map((dbName, index) => {
-            return { id: index, name: dbName };
-          });
+          const databasesArray = response.data.databases.map(
+            (dbName, index) => {
+              return { id: index, name: dbName };
+            }
+          );
           setDatabases(databasesArray);
-  
+
           // Fetch tables for the first database
           if (databasesArray.length > 0) {
             const firstDatabase = databasesArray[0];
@@ -186,15 +191,13 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
             fetchTables(firstDatabase.name);
           }
         } else {
-          console.error('Received data is not an object:', response.data);
+          console.error("Received data is not an object:", response.data);
         }
       })
       .catch((error) => {
-        console.error('Failed to fetch databases:', error);
+        console.error("Failed to fetch databases:", error);
       });
   };
-  
-  
 
   const fetchTables = (databaseName) => {
     if (!databaseName) {
@@ -204,37 +207,35 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
     axios
       .get(`http://127.0.0.1:8000/${databaseName}`)
       .then((response) => {
-        console.log('Fetched tables:', response.data);
-        if (response.data && typeof response.data === 'object') {
-          const tablesArray = (response.data.collections).map((tableName, index) => {
-            return { id: index, name: tableName };
-          });
+        console.log("Fetched tables:", response.data);
+        if (response.data && typeof response.data === "object") {
+          const tablesArray = response.data.collections.map(
+            (tableName, index) => {
+              return { id: index, name: tableName };
+            }
+          );
           setTables(tablesArray);
-  
+
           // Fetch collections for each table
-          tablesArray.forEach(table => {
+          tablesArray.forEach((table) => {
             fetchCollections(databaseName, table.name);
           });
         } else {
-          console.error('Received data is not an object:', response.data);
+          console.error("Received data is not an object:", response.data);
         }
       })
-      .catch((error) => console.error('Error fetching tables:', error));
+      .catch((error) => console.error("Error fetching tables:", error));
   };
-  
 
   const fetchCollections = (databaseName, tableName) => {
     axios
       .get(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
       .then((response) => {
-        console.log('Fetched collections:', response.data.documents);
+        console.log("Fetched collections:", response.data.documents);
         // Handle the fetched collections data here
-        
-
       })
-      .catch((error) => console.error('Error fetching collections:', error));
+      .catch((error) => console.error("Error fetching collections:", error));
   };
-  
 
   const handleDatabaseClick = (database) => {
     if (selectedDatabase === database) {
@@ -246,144 +247,159 @@ const Sidebar = ({ selectedDatabase, setSelectedDatabase, setSelectedTable }) =>
     }
   };
 
- 
   const createDatabase = (name) => {
     const body = {
-      dbName : name
+      dbName: name,
     };
     console.log(body);
-    console.log("hello")
+    console.log("hello");
 
-    if(!body){
+    if (!body) {
       alert("Please enter a database name");
-    }else{
-      axios.post('http://127.0.0.1:8000/', body)
-      .then((response) => {
-        console.log('Database created:', response.data);
-        fetchDatabases();
-      })
-      .catch((error) => console.error('Error creating database:', error));
+    } else {
+      try {
+        console.log("Accuut");
+
+        axios
+          .post("http://127.0.0.1:8000/", JSON.stringify(body))
+          .then((response) => {
+            console.log("Database created:", response.data);
+            fetchDatabases();
+          })
+          .catch((error) => console.error("Error creating database:", error));
+      } catch (error) {
+        console.log("it is an error", error.toString());
+      }
     }
-  
   };
-  
 
   const createTable = (name) => {
     const body = {
-      collectionName : name
+      collectionName: name,
     };
-    axios.post(`http://127.0.0.1:8000/${selectedDatabase.name}`, body)
+    axios
+      .post(
+        `http://127.0.0.1:8000/${selectedDatabase.name}`,
+        JSON.stringify(body)
+      )
       .then((response) => {
-        console.log('Table created:', response.data);
+        console.log("Table created:", response.data);
         fetchTables(selectedDatabase.name);
       })
-      .catch((error) => console.error('Error creating table:', error));
+      .catch((error) => console.error("Error creating table:", error));
   };
 
-
-
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState(null);
-
-
   const handleAddDatabaseClick = () => {
-    console.log('Add database');
-    setModalType('database');
+    console.log("Add database");
+    setModalType("database");
     setShowModal(true);
   };
 
   const handleAddTableClick = (database) => {
-    console.log('Add table to', database.name);
-    setModalType('table');
+    console.log("Add table to", database.name);
+    setModalType("table");
     setShowModal(true);
   };
+  
   const handleDeleteDatabaseClick = (database) => {
-    console.log('Delete database:', database.name);
-    // Implement deleting a database
+    console.log("Delete database:", database.name);
+    axios
+      .delete(`http://127.0.0.1:8000/${database.name}`)
+      .then((response) => {
+        console.log("Database deleted:", response.data);
+        fetchDatabases(); // fetch updated database list
+      })
+      .catch((error) => console.error("Error deleting database:", error));
   };
-
+  
   const handleDeleteTableClick = (table) => {
-    console.log('Delete table:', table.name);
-    // Implement deleting a table
+    console.log("Delete table:", table.name);
+    axios
+      .delete(`http://127.0.0.1:8000/${selectedDatabase.name}/${table.name}`)
+      .then((response) => {
+        console.log("Table deleted:", response.data);
+        fetchTables(selectedDatabase.name); // fetch updated table list
+      })
+      .catch((error) => console.error("Error deleting table:", error));
   };
   const handleSave = (name) => {
-    if (modalType === 'database') {
-      console.log('Save database:', name);
+    if (modalType === "database") {
+      console.log("Save database:", name);
       createDatabase(name);
-    } else if (modalType === 'table') {
-      console.log('Save table:', name);
+    } else if (modalType === "table") {
+      console.log("Save table:", name);
       createTable(name);
     }
     setShowModal(false);
   };
   return (
     <SidebarContainer>
-    <SectionTitle>
-      Databases
-      <AddButton onClick={handleAddDatabaseClick}>
-        <BsDatabaseFillAdd size={15} />
-      </AddButton>
-    </SectionTitle>
-    {databases.map((database,index) => (
-      <React.Fragment key={database.id}>
-      <DatabaseItem
-    key={index} // Ajout de la clé unique
-    database={database}
-    isSelected={selectedDatabase === database}
-    onClick={() => handleDatabaseClick(database)}
-  >
-          {database.name}
-          <IconHolder>
-            <AddButton
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddTableClick(database);
-              }}
-            >
-              <IoMdAdd size={15} />
-            </AddButton>
-            <RecycleBinButton
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteDatabaseClick(database);
-              }}
-            >
-              <BsTrash size={15} />
-            </RecycleBinButton>
-          </IconHolder>
-        </DatabaseItem>
-        {selectedDatabase === database &&
-          tables.map((table, index) => (
-            <TableItem
-              key={index}
-              onClick={() => {
-                setSelectedTable(table);
-                fetchCollections(database.name, table.name);
-              }}
-            >
-              {table.name}
-              <IconHolder>
-                <p> </p>
-                <RecycleBinButton
+      <SectionTitle>
+        Databases
+        <AddButton onClick={handleAddDatabaseClick}>
+          <BsDatabaseFillAdd size={15} />
+        </AddButton>
+      </SectionTitle>
+      {databases.map((database, index) => (
+        <React.Fragment key={database.id}>
+          <DatabaseItem
+            key={index} // Ajout de la clé unique
+            database={database}
+            isSelected={selectedDatabase === database}
+            onClick={() => handleDatabaseClick(database)}
+          >
+            {database.name}
+            <IconHolder>
+              <AddButton
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDeleteTableClick(table);
+                  handleAddTableClick(database);
+                }}
+              >
+                <IoMdAdd size={15} />
+              </AddButton>
+              <RecycleBinButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteDatabaseClick(database);
                 }}
               >
                 <BsTrash size={15} />
               </RecycleBinButton>
             </IconHolder>
-          </TableItem>
-        ))}
-      </React.Fragment>
-    ))}
-    <Modal
-      show={showModal}
-      onClose={() => setShowModal(false)}
-      onSave={handleSave}
-    />
-  </SidebarContainer>
-);
+          </DatabaseItem>
+          {selectedDatabase === database &&
+            tables.map((table, index) => (
+              <TableItem
+                key={index}
+                onClick={() => {
+                  setSelectedTable(table);
+                  fetchCollections(database.name, table.name);
+                }}
+              >
+                {table.name}
+                <IconHolder>
+                  <p> </p>
+                  <RecycleBinButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTableClick(table);
+                    }}
+                  >
+                    <BsTrash size={15} />
+                  </RecycleBinButton>
+                </IconHolder>
+              </TableItem>
+            ))}
+        </React.Fragment>
+      ))}
+      <Modal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        onSave={handleSave}
+      />
+    </SidebarContainer>
+  );
 };
 
 export default Sidebar;

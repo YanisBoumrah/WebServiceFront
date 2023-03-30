@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 
 const EditableCell = ({ value, onValueChange }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -17,7 +17,7 @@ const EditableCell = ({ value, onValueChange }) => {
   };
 
   const handleKeyPress = (event) => {
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       handleBlur();
     }
   };

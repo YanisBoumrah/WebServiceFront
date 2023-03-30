@@ -1,5 +1,5 @@
-import React from 'react';
-import styled from 'styled-components';
+import React from "react";
+import styled from "styled-components";
 
 const FooterContainer = styled.footer`
   background-color: #009879;
@@ -17,7 +17,8 @@ const FooterContainer = styled.footer`
 const Footer = () => {
   return (
     <FooterContainer>
-      Watermelon DB &copy; {new Date().getFullYear()} - Created by Yanis Boumrah and Yanis Bouzelha
+      Watermelon DB &copy; {new Date().getFullYear()} - Created by Yanis Boumrah
+      and Yanis Bouzelha
     </FooterContainer>
   );
 };
