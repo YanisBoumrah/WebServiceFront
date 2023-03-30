@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { BsDatabaseFillAdd } from "react-icons/bs";
+import { BsDatabaseFillAdd ,BsTrash} from "react-icons/bs";
 import { IoMdAdd } from "react-icons/io";
-import { BsTrash } from "react-icons/bs";
+import {GrTableAdd} from "react-icons/gr";
 import axios from "axios";
 
+
 const SidebarContainer = styled.div`
-  background-color: #333;
+  background-color: #606060; ;
   border-right: 1px solid #ccc;
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
@@ -22,7 +23,6 @@ const DatabaseItem = styled.div`
   padding: 10px 0;
   display: flex;
   align-items: center;
-
   ${({ isSelected }) =>
     isSelected &&
     `
@@ -100,7 +100,6 @@ const ModalContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: red;
   padding: 20px;
   border-radius: 5px;
   width: 300px;
@@ -200,6 +199,7 @@ const Sidebar = ({
   };
 
   const fetchTables = (databaseName) => {
+    console.log(`http://127.0.0.1:8000/${databaseName}`);
     if (!databaseName) {
       console.error("Database name is undefined");
       return;
@@ -228,6 +228,7 @@ const Sidebar = ({
   };
 
   const fetchCollections = (databaseName, tableName) => {
+    console.log(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
     axios
       .get(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
       .then((response) => {
@@ -251,9 +252,6 @@ const Sidebar = ({
     const body = {
       dbName: name,
     };
-    console.log(body);
-    console.log("hello");
-
     if (!body) {
       alert("Please enter a database name");
     } else {
@@ -302,9 +300,12 @@ const Sidebar = ({
   };
   
   const handleDeleteDatabaseClick = (database) => {
+    const url = `http://127.0.0.1:8000/${database.name}`
+    console.log(url)
+    // const url = `http://127.0.0.1:8000/Clients`
     console.log("Delete database:", database.name);
     axios
-      .delete(`http://127.0.0.1:8000/${database.name}`)
+      .delete(url)
       .then((response) => {
         console.log("Database deleted:", response.data);
         fetchDatabases(); // fetch updated database list
@@ -351,16 +352,14 @@ const Sidebar = ({
             {database.name}
             <IconHolder>
               <AddButton
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   handleAddTableClick(database);
                 }}
               >
                 <IoMdAdd size={15} />
               </AddButton>
               <RecycleBinButton
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   handleDeleteDatabaseClick(database);
                 }}
               >
@@ -377,6 +376,7 @@ const Sidebar = ({
                   fetchCollections(database.name, table.name);
                 }}
               >
+                <GrTableAdd style={{margin : '0 5px 0 0'}}/>
                 {table.name}
                 <IconHolder>
                   <p> </p>

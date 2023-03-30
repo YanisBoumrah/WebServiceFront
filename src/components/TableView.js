@@ -32,20 +32,6 @@ const Table = styled.table`
   }
 `;
 
-const AddLine = styled.div`
-  display: flex;
-  align-items: center;
-  background-color: red;
-`;
-
-const InputContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-right: 10px;
-  align-items: center;
-  justify-content: center;
-`;
-
 const AddButton = styled.button`
   border: none;
   color: #009879;
@@ -89,6 +75,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
       );
       setCollections(response.data);
+      console.log('',response.data)
 
       // Update maxFields when collections are fetched
       if (
@@ -141,13 +128,38 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
   };
 
   useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const response = await axios.get(
+          `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
+        );
+        setCollections(response.data);
+        console.log('',response.data)
+  
+        // Update maxFields when collections are fetched
+        if (
+          response.data &&
+          response.data.documents &&
+          Object.keys(response.data.documents).length > 0
+        ) {
+          const firstDocument =
+            response.data.documents[Object.keys(response.data.documents)[0]];
+          setMaxFields(Object.keys(firstDocument).length);
+        } else {
+          setMaxFields(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch collections:", error);
+      }
+    };
+  
     if (selectedDatabase && selectedTable) {
       fetchCollections();
     }
-  }, []);
+  }, [selectedDatabase, selectedTable]);
 
   return (
-    <React.Fragment>
+    <>
       <h3>Table: {selectedTable.name}</h3>
       <Table>
         <thead>
@@ -157,7 +169,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
             Object.keys(collections.documents).length > 0 ? (
               Object.keys(
                 collections.documents[Object.keys(collections.documents)[0]]
-              ).map((key) => <th key={key}>{key}</th>)
+              ).map((key) => <th key={key.id}>{key}</th>)
             ) : (
               <tr>
                 <td colSpan="100%">No collections found.</td>
@@ -190,8 +202,6 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
           )}
         </tbody>
       </Table>
-      <AddLine>
-        <InputContainer>
           <AddButton onClick={addField}>+</AddButton>
           {newFields.map((field, index) => (
             <div key={index}>
@@ -211,10 +221,9 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
               />
             </div>
           ))}
-        </InputContainer>
+        
         <CreateButton onClick={createNewDocument}>Create document</CreateButton>{" "}
-      </AddLine>
-    </React.Fragment>
+    </>
   );
 };
 
