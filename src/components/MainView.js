@@ -5,7 +5,7 @@ import TableView from "./TableView";
 const MainViewContainer = styled.div`
   flex: 1;
   padding: 20px;
-  min-height: 100vh;
+  height: 100%;
 `;
 
 const MainView = ({ selectedTable, selectedDatabase }) => {

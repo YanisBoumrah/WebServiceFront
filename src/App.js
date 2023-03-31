@@ -5,13 +5,23 @@ import MainView from './components/MainView';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import axios from 'axios';
+import { createGlobalStyle } from 'styled-components';
+
+
+const GlobalStyle = createGlobalStyle`
+  body, html {
+    overflow: hidden;
+  }
+`; 
 
 const Wrapper = styled.div`
   font-family: Arial, sans-serif;
   display: flex;
-  background-color: #f7f7f7;
-  min-height: 100vh;
-  padding: 20px;
+  background-color: rgb(247, 247, 247);
+height:100vh; 
+ padding: 20px;
+ overflow: hidden; /* add this line to hide the scrollbar */
+
 `;
 
 function App() {
@@ -34,6 +44,7 @@ function App() {
 
   return (
     <>
+      <GlobalStyle />
       <Header />
       <Wrapper>
         <Sidebar

@@ -16,17 +16,25 @@ const HeaderContainer = styled.header`
   top: 0;
   z-index: 100;
 `;
+const ContentContainer = styled.div`
+display: flex;
+align-items: center;
+margin-left: 60px;
+`
 
 const Img = styled.img`
-
-`;
-
+width: 30px;
+height: 40px;
+margin-right: 10px;
+`
 
 const Header = () => {
   return (
   <HeaderContainer>
+  <ContentContainer>
   <Img src={img} ></Img>
   Watermelon DB
+  </ContentContainer>
   </HeaderContainer>
   
   )

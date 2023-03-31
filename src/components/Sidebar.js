@@ -6,16 +6,17 @@ import {GrTableAdd} from "react-icons/gr";
 import axios from "axios";
 
 
+
 const SidebarContainer = styled.div`
-  background-color: #606060; ;
+  background-color: #FFF; ;
   border-right: 1px solid #ccc;
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
   width: 250px;
-  height: calc(100vh - 200px);
+  height: 100%;
   overflow-y: auto;
   position: sticky;
-  top: 70px;
+  overflow: hidden;
 `;
 
 const DatabaseItem = styled.div`

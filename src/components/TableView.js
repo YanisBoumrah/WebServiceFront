@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import EditableCell from "./EditableCell";
+import Select from "react-select";
 
 const Table = styled.table`
   border-collapse: collapse;
@@ -30,6 +31,20 @@ const Table = styled.table`
   tbody tr:last-of-type {
     border-bottom: 2px solid #009879;
   }
+`;
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+`;
+
+const SearchContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-left: 20px;
 `;
 
 const AddButton = styled.button`
@@ -69,13 +84,29 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
   const [newFields, setNewFields] = useState([]);
   const [maxFields, setMaxFields] = useState(null);
 
+  const operators = [
+    { value: ">", label: ">" },
+    { value: "<", label: "<" },
+    { value: "<=", label: "<=" },
+    { value: ">=", label: ">=" },
+    { value: "!=", label: "Diff" },
+    { value: "=", label: "Egale" },
+  ];
+
+  const [searchKey, setSearchKey] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOperator, setSelectedOperator] = useState(operators[0]);
+  const [searchConditions, setSearchConditions] = useState([
+    { key: "", operator: "", term: "" },
+  ]);
+
   const fetchCollections = async () => {
     try {
       const response = await axios.get(
         `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
       );
       setCollections(response.data);
-      console.log('',response.data)
+      console.log("", response.data);
 
       // Update maxFields when collections are fetched
       if (
@@ -93,6 +124,51 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
       console.error("Failed to fetch collections:", error);
     }
   };
+ 
+  const searchDocuments = async () => {
+    try {
+      const query = searchConditions
+        .filter(
+          (condition) => condition.key && condition.operator && condition.term
+        )
+        .map(
+          (condition, index) =>
+            `${condition.key}${condition.operator}${condition.term}${
+              index < searchConditions.length - 1 ? "&" : ""
+            }`
+        )
+        .join("");
+  
+      console.log("je suis la query", query);
+      if (query) {
+        const response = await axios.get(
+          `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}?${query}`
+        );
+        console.log("response", response);
+        setCollections({ documents: response.data });
+      }
+    } catch (error) {
+      console.error("Failed to search documents:", error);
+    }
+  };
+  
+
+  const addSearchField = () => {
+    setSearchConditions([
+      ...searchConditions,
+      { key: "", operator: "", term: "" },
+    ]);
+
+  };
+  const deleteSearchField = (index) => {
+    const updatedConditions = [...searchConditions];
+    updatedConditions.splice(index, 1);
+    setSearchConditions(updatedConditions);
+  };
+  const ResetTable = () => {
+    fetchCollections()
+  }
+
   const addField = () => {
     if (!maxFields || newFields.length < maxFields) {
       setNewFields([...newFields, { key: "", value: "" }]);
@@ -134,8 +210,8 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
           `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
         );
         setCollections(response.data);
-        console.log('',response.data)
-  
+        console.log("", response.data);
+
         // Update maxFields when collections are fetched
         if (
           response.data &&
@@ -152,77 +228,169 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         console.error("Failed to fetch collections:", error);
       }
     };
-  
+
     if (selectedDatabase && selectedTable) {
       fetchCollections();
     }
   }, [selectedDatabase, selectedTable]);
 
+  useEffect(() => {
+    if (
+      collections &&
+      collections.documents &&
+      Object.keys(collections.documents).length > 0
+    ) {
+      const firstKey = Object.keys(
+        collections.documents[Object.keys(collections.documents)[0]]
+      )[0];
+  
+      setSearchConditions((prevConditions) => {
+        const updatedConditions = [...prevConditions];
+        updatedConditions[0].key = firstKey;
+        return updatedConditions;
+      });
+    }
+  }, [collections]);
   return (
     <>
       <h3>Table: {selectedTable.name}</h3>
-      <Table>
-        <thead>
-          <tr>
-            {collections &&
-            collections.documents &&
-            Object.keys(collections.documents).length > 0 ? (
-              Object.keys(
-                collections.documents[Object.keys(collections.documents)[0]]
-              ).map((key) => <th key={key.id}>{key}</th>)
+      <Container>
+        <Table key={Math.random()}>
+          <thead>
+            <tr key={Math.random()}>
+              {collections &&
+              collections.documents &&
+              Object.keys(collections.documents).length > 0 ? (
+                Object.keys(
+                  collections.documents[Object.keys(collections.documents)[0]]
+                ).map((key) => <th key={key.id}>{key}</th>)
+              ) : (
+                <tr>
+                  <td colSpan="100%">No collections found.</td>
+                </tr>
+              )}
+            </tr>
+          </thead>
+
+          <tbody>
+            {collections && collections.documents ? (
+              Object.keys(collections.documents).length > 0 ? (
+                Object.values(collections.documents).map((row) => (
+                  <tr key={row.id}>
+                    {row &&
+                      Object.keys(row).map((column) => (
+                        <td key={column}>
+                          <EditableCell
+                            value={row[column]}
+                            onValueChange={(newValue) =>
+                              console.log("Handle cell value change", newValue)
+                            }
+                          />
+                        </td>
+                      ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="100%">No results found.</td>
+                </tr>
+              )
             ) : (
               <tr>
                 <td colSpan="100%">No collections found.</td>
               </tr>
             )}
-          </tr>
-        </thead>
-
-        <tbody>
-          {collections && collections.documents ? (
-            Object.values(collections.documents).map((row) => (
-              <tr key={row.id}>
-                {row &&
-                  Object.keys(row).map((column) => (
-                    <td key={column}>
-                      <EditableCell
-                        value={row[column]}
-                        onValueChange={(newValue) =>
-                          console.log("Handle cell value change", newValue)
-                        }
-                      />
-                    </td>
-                  ))}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="100%">No collections found.</td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
-          <AddButton onClick={addField}>+</AddButton>
-          {newFields.map((field, index) => (
+          </tbody>
+        </Table>
+        <SearchContainer>
+          {searchConditions.map((condition, index) => (
             <div key={index}>
-              <FieldInput
-                value={field.key}
-                onChange={(e) =>
-                  handleFieldChange(index, e.target.value, field.value)
-                }
-                placeholder="Key"
+              {/* Key dropdown */}
+              <select
+                value={condition.key}
+                onChange={(e) => {
+                  setSearchConditions((prevConditions) => {
+                    const updatedConditions = [...prevConditions];
+                    updatedConditions[index].key = e.target.value;
+                    return updatedConditions;
+                  });
+                }}
+              >
+                {collections &&
+                  collections.documents &&
+                  Object.keys(collections.documents).length > 0 &&
+                  Object.keys(
+                    collections.documents[Object.keys(collections.documents)[0]]
+                  ).map((key) => (
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
+                  ))}
+              </select>
+
+              {/* Operator dropdown */}
+              <select
+                value={condition.operator}
+                onChange={(e) => {
+                  setSearchConditions((prevConditions) => {
+                    const updatedConditions = [...prevConditions];
+                    updatedConditions[index].operator = e.target.value;
+                    return updatedConditions;
+                  });
+                }}
+              >
+                {operators.map((operator) => (
+                  <option key={operator.value} value={operator.value}>
+                    {operator.label}
+                  </option>
+                ))}
+              </select>
+
+              {/* Search term input */}
+              <input
+                type="text"
+                value={condition.term}
+                onChange={(e) => {
+                  setSearchConditions((prevConditions) => {
+                    const updatedConditions = [...prevConditions];
+                    updatedConditions[index].term = e.target.value;
+                    return updatedConditions;
+                  });
+                }}
+                placeholder="Search term"
               />
-              <FieldInput
-                value={field.value}
-                onChange={(e) =>
-                  handleFieldChange(index, field.key, e.target.value)
-                }
-                placeholder="Value"
-              />
+              <button onClick={() => deleteSearchField(index)}>Delete</button>
+
             </div>
           ))}
-        
-        <CreateButton onClick={createNewDocument}>Create document</CreateButton>{" "}
+
+          <button onClick={addSearchField}>Add search field</button>
+          <button onClick={ResetTable}>reset</button>
+
+          <button onClick={searchDocuments}>Search</button>
+        </SearchContainer>
+      </Container>
+      <AddButton onClick={addField}>+</AddButton>
+      {newFields.map((field, index) => (
+        <div key={index}>
+          <FieldInput
+            value={field.key}
+            onChange={(e) =>
+              handleFieldChange(index, e.target.value, field.value)
+            }
+            placeholder="Key"
+          />
+          <FieldInput
+            value={field.value}
+            onChange={(e) =>
+              handleFieldChange(index, field.key, e.target.value)
+            }
+            placeholder="Value"
+          />
+          
+        </div>
+      ))}
+      <CreateButton onClick={createNewDocument}>Create document</CreateButton>{" "}
     </>
   );
 };
