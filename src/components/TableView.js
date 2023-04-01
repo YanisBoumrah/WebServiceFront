@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import EditableCell from "./EditableCell";
-import Select from "react-select";
 
 const Table = styled.table`
   border-collapse: collapse;
@@ -93,11 +92,8 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
     { value: "=", label: "Egale" },
   ];
 
-  const [searchKey, setSearchKey] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedOperator, setSelectedOperator] = useState(operators[0]);
   const [searchConditions, setSearchConditions] = useState([
-    { key: "", operator: "", term: "" },
+    { key: "", operator: ">", term: "" },
   ]);
 
   const fetchCollections = async () => {
@@ -124,7 +120,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
       console.error("Failed to fetch collections:", error);
     }
   };
- 
+
   const searchDocuments = async () => {
     try {
       const query = searchConditions
@@ -134,11 +130,11 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         .map(
           (condition, index) =>
             `${condition.key}${condition.operator}${condition.term}${
-              index < searchConditions.length - 1 ? "&" : ""
+              index < searchConditions.length - 1 ? "" : ""
             }`
         )
-        .join("");
-  
+        .join("&");
+
       console.log("je suis la query", query);
       if (query) {
         const response = await axios.get(
@@ -151,14 +147,12 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
       console.error("Failed to search documents:", error);
     }
   };
-  
 
   const addSearchField = () => {
     setSearchConditions([
       ...searchConditions,
       { key: "", operator: "", term: "" },
     ]);
-
   };
   const deleteSearchField = (index) => {
     const updatedConditions = [...searchConditions];
@@ -166,8 +160,8 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
     setSearchConditions(updatedConditions);
   };
   const ResetTable = () => {
-    fetchCollections()
-  }
+    fetchCollections();
+  };
 
   const addField = () => {
     if (!maxFields || newFields.length < maxFields) {
@@ -203,6 +197,17 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
     }
   };
 
+  const updateDocumentAttribute = async (id, attribute, value) => {
+    try {
+      await axios.put(
+        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}/${id}?${attribute}=${value}`
+      );
+      fetchCollections();
+    } catch (error) {
+      console.error("Failed to update document attribute:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchCollections = async () => {
       try {
@@ -210,9 +215,8 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
           `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
         );
         setCollections(response.data);
-        console.log("", response.data);
-
-        // Update maxFields when collections are fetched
+  
+        // Update search conditions with the first key by default
         if (
           response.data &&
           response.data.documents &&
@@ -220,37 +224,41 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         ) {
           const firstDocument =
             response.data.documents[Object.keys(response.data.documents)[0]];
-          setMaxFields(Object.keys(firstDocument).length);
-        } else {
-          setMaxFields(null);
+          const firstKey = Object.keys(firstDocument)[0];
+          setSearchConditions((prevConditions) => {
+            const updatedConditions = [...prevConditions];
+            updatedConditions[0].key = firstKey;
+            return updatedConditions;
+          });
         }
       } catch (error) {
         console.error("Failed to fetch collections:", error);
       }
     };
-
+  
     if (selectedDatabase && selectedTable) {
       fetchCollections();
     }
   }, [selectedDatabase, selectedTable]);
-
-  useEffect(() => {
-    if (
-      collections &&
-      collections.documents &&
-      Object.keys(collections.documents).length > 0
-    ) {
-      const firstKey = Object.keys(
-        collections.documents[Object.keys(collections.documents)[0]]
-      )[0];
   
-      setSearchConditions((prevConditions) => {
-        const updatedConditions = [...prevConditions];
-        updatedConditions[0].key = firstKey;
-        return updatedConditions;
-      });
-    }
-  }, [collections]);
+
+  // useEffect(() => {
+  //   if (
+  //     collections &&
+  //     collections.documents &&
+  //     Object.keys(collections.documents).length > 0
+  //   ) {
+  //     const firstKey = Object.keys(
+  //       collections.documents[Object.keys(collections.documents)[0]]
+  //     )[0];
+
+  //     setSearchConditions((prevConditions) => {
+  //       const updatedConditions = [...prevConditions];
+  //       updatedConditions[0].key = firstKey;
+  //       return updatedConditions;
+  //     });
+  //   }
+  // }, [collections]);
   return (
     <>
       <h3>Table: {selectedTable.name}</h3>
@@ -283,7 +291,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
                           <EditableCell
                             value={row[column]}
                             onValueChange={(newValue) =>
-                              console.log("Handle cell value change", newValue)
+                              updateDocumentAttribute(row.id, column, newValue)
                             }
                           />
                         </td>
@@ -360,7 +368,6 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
                 placeholder="Search term"
               />
               <button onClick={() => deleteSearchField(index)}>Delete</button>
-
             </div>
           ))}
 
@@ -387,7 +394,6 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
             }
             placeholder="Value"
           />
-          
         </div>
       ))}
       <CreateButton onClick={createNewDocument}>Create document</CreateButton>{" "}
