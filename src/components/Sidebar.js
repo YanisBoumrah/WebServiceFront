@@ -377,7 +377,7 @@ const Sidebar = ({
                   fetchCollections(database.name, table.name);
                 }}
               >
-                <GrTableAdd style={{margin : '0 5px 0 0'}}/>
+                <GrTableAdd style={{margin : '0 5px 0 0', fontSize: "1.5em"}}/>
                 {table.name}
                 <IconHolder>
                   <p> </p>
