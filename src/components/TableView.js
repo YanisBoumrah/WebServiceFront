@@ -130,10 +130,10 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         .map(
           (condition, index) =>
             `${condition.key}${condition.operator}${condition.term}${
-              index < searchConditions.length - 1 ? "" : ""
+              index < searchConditions.length - 1 ? "&" : ""
             }`
         )
-        .join("&");
+        .join("");
 
       console.log("je suis la query", query);
       if (query) {
@@ -151,7 +151,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
   const addSearchField = () => {
     setSearchConditions([
       ...searchConditions,
-      { key: "", operator: "", term: "" },
+      { key: "", operator: ">", term: "" },
     ]);
   };
   const deleteSearchField = (index) => {
