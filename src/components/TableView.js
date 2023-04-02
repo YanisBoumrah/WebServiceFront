@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import axios from "axios";
 import EditableCell from "./EditableCell";
+import { RxCrossCircled } from "react-icons/rx";
 
 const Table = styled.table`
   border-collapse: collapse;
@@ -33,25 +34,127 @@ const Table = styled.table`
 `;
 
 const Container = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  grid-gap: 150px;
+
 `;
 
 const SearchContainer = styled.div`
+  margin: 20px 0 0 0;
+  width: 50%;
+  height: auto;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
   margin-left: 20px;
 `;
 
+const SelectAttribute = styled.select`
+  padding: 5px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  width: auto;
+  box-sizing: border-box;
+`;
+
+const SelectOperator = styled.select`
+  padding: 5px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  width: auto;
+  box-sizing: border-box;
+`;
+
+const SearchTerm = styled.input`
+  padding: 5px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  width: auto;
+  box-sizing: border-box;
+`;
+
+const SearchButton = styled.button`
+  background-color: #009879;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  &:hover {
+    background-color: #007f67;
+  }
+`;
+
+const SearchConditions = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+`;
+
+const ResetContainer = styled.div`
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+`;
+
+const ResetSearchButton = styled.button`
+  background-color: #009879;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  &:hover {
+    background-color: #007f67;
+  }
+`;
+
+const DeleteSearchField = styled.button`
+  border: none;
+  background-color: transparent;
+  color: #c0392b;
+  font-size: 1.2rem; // Smaller font size
+  font-weight: bold;
+  text-align: center;
+  &:hover {
+    color: #e74c3c;
+  }
+`;
+
 const AddButton = styled.button`
+  border: none;
+  background-color: transparent;
+  color: #009879;
+  margin-right: 10px;
+  font-size: 1.2rem; // Smaller font size
+  font-weight: bold;
+  text-align: center;
+`;
+const AddSearchButton = styled.button`
+position: relative;
+  background-color: transparent;
   border: none;
   color: #009879;
   font-size: 1.2rem; // Smaller font size
   font-weight: bold;
   text-align: center;
+  
 `;
 
 const CreateButton = styled.button`
@@ -78,6 +181,12 @@ const FieldInput = styled.input`
   box-sizing: border-box;
 `;
 
+const Div = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
 const TableView = ({ selectedDatabase, selectedTable }) => {
   const [collections, setCollections] = useState([]);
   const [newFields, setNewFields] = useState([]);
@@ -88,8 +197,8 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
     { value: "<", label: "<" },
     { value: "<=", label: "<=" },
     { value: ">=", label: ">=" },
-    { value: "!=", label: "Diff" },
     { value: "=", label: "Egale" },
+    { value: "!=", label: "Diff" },
   ];
 
   const [searchConditions, setSearchConditions] = useState([
@@ -133,7 +242,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
               index < searchConditions.length - 1 ? "&" : ""
             }`
         )
-        .join("");
+        .join("&");
 
       console.log("je suis la query", query);
       if (query) {
@@ -215,7 +324,12 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
           `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
         );
         setCollections(response.data);
-  
+        console.log("i'm here", response.data);
+
+        for (const id in response.data.documents) {
+          console.log("i'm id", id);
+        }
+
         // Update search conditions with the first key by default
         if (
           response.data &&
@@ -224,6 +338,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         ) {
           const firstDocument =
             response.data.documents[Object.keys(response.data.documents)[0]];
+          setMaxFields(Object.keys(firstDocument).length);
           const firstKey = Object.keys(firstDocument)[0];
           setSearchConditions((prevConditions) => {
             const updatedConditions = [...prevConditions];
@@ -235,30 +350,12 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         console.error("Failed to fetch collections:", error);
       }
     };
-  
+
     if (selectedDatabase && selectedTable) {
       fetchCollections();
     }
   }, [selectedDatabase, selectedTable]);
-  
 
-  // useEffect(() => {
-  //   if (
-  //     collections &&
-  //     collections.documents &&
-  //     Object.keys(collections.documents).length > 0
-  //   ) {
-  //     const firstKey = Object.keys(
-  //       collections.documents[Object.keys(collections.documents)[0]]
-  //     )[0];
-
-  //     setSearchConditions((prevConditions) => {
-  //       const updatedConditions = [...prevConditions];
-  //       updatedConditions[0].key = firstKey;
-  //       return updatedConditions;
-  //     });
-  //   }
-  // }, [collections]);
   return (
     <>
       <h3>Table: {selectedTable.name}</h3>
@@ -283,15 +380,15 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
           <tbody>
             {collections && collections.documents ? (
               Object.keys(collections.documents).length > 0 ? (
-                Object.values(collections.documents).map((row) => (
-                  <tr key={row.id}>
+                Object.entries(collections.documents).map(([id, row]) => (
+                  <tr key={id}>
                     {row &&
                       Object.keys(row).map((column) => (
                         <td key={column}>
                           <EditableCell
                             value={row[column]}
                             onValueChange={(newValue) =>
-                              updateDocumentAttribute(row.id, column, newValue)
+                              updateDocumentAttribute(id, column, newValue)
                             }
                           />
                         </td>
@@ -311,70 +408,77 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
           </tbody>
         </Table>
         <SearchContainer>
-          {searchConditions.map((condition, index) => (
-            <div key={index}>
-              {/* Key dropdown */}
-              <select
-                value={condition.key}
-                onChange={(e) => {
-                  setSearchConditions((prevConditions) => {
-                    const updatedConditions = [...prevConditions];
-                    updatedConditions[index].key = e.target.value;
-                    return updatedConditions;
-                  });
-                }}
-              >
-                {collections &&
-                  collections.documents &&
-                  Object.keys(collections.documents).length > 0 &&
-                  Object.keys(
-                    collections.documents[Object.keys(collections.documents)[0]]
-                  ).map((key) => (
-                    <option key={key} value={key}>
-                      {key}
+          <SearchConditions>
+            {searchConditions.map((condition, index) => (
+              <Div key={index}>
+              <AddSearchButton onClick={addSearchField}>+</AddSearchButton>
+                {/* Key dropdown */}
+                <SelectAttribute
+                  value={condition.key}
+                  onChange={(e) => {
+                    setSearchConditions((prevConditions) => {
+                      const updatedConditions = [...prevConditions];
+                      updatedConditions[index].key = e.target.value;
+                      return updatedConditions;
+                    });
+                  }}
+                >
+                  {collections &&
+                    collections.documents &&
+                    Object.keys(collections.documents).length > 0 &&
+                    Object.keys(
+                      collections.documents[
+                        Object.keys(collections.documents)[0]
+                      ]
+                    ).map((key) => (
+                      <option key={key} value={key}>
+                        {key}
+                      </option>
+                    ))}
+                </SelectAttribute>
+
+                {/* Operator dropdown */}
+                <SelectOperator
+                  value={condition.operator}
+                  onChange={(e) => {
+                    setSearchConditions((prevConditions) => {
+                      const updatedConditions = [...prevConditions];
+                      updatedConditions[index].operator = e.target.value;
+                      return updatedConditions;
+                    });
+                  }}
+                >
+                  {operators.map((operator) => (
+                    <option key={operator.value} value={operator.value}>
+                      {operator.label}
                     </option>
                   ))}
-              </select>
+                </SelectOperator>
 
-              {/* Operator dropdown */}
-              <select
-                value={condition.operator}
-                onChange={(e) => {
-                  setSearchConditions((prevConditions) => {
-                    const updatedConditions = [...prevConditions];
-                    updatedConditions[index].operator = e.target.value;
-                    return updatedConditions;
-                  });
-                }}
-              >
-                {operators.map((operator) => (
-                  <option key={operator.value} value={operator.value}>
-                    {operator.label}
-                  </option>
-                ))}
-              </select>
+                {/* Search term input */}
+                <SearchTerm
+                  type="text"
+                  value={condition.term}
+                  onChange={(e) => {
+                    setSearchConditions((prevConditions) => {
+                      const updatedConditions = [...prevConditions];
+                      updatedConditions[index].term = e.target.value;
+                      return updatedConditions;
+                    });
+                  }}
+                  placeholder="Search term"
+                />
+                <DeleteSearchField onClick={() => deleteSearchField(index)}>
+                  <RxCrossCircled />
+                </DeleteSearchField>
+              </Div>
+            ))}
+          </SearchConditions>
 
-              {/* Search term input */}
-              <input
-                type="text"
-                value={condition.term}
-                onChange={(e) => {
-                  setSearchConditions((prevConditions) => {
-                    const updatedConditions = [...prevConditions];
-                    updatedConditions[index].term = e.target.value;
-                    return updatedConditions;
-                  });
-                }}
-                placeholder="Search term"
-              />
-              <button onClick={() => deleteSearchField(index)}>Delete</button>
-            </div>
-          ))}
-
-          <button onClick={addSearchField}>Add search field</button>
-          <button onClick={ResetTable}>reset</button>
-
-          <button onClick={searchDocuments}>Search</button>
+          <ResetContainer>
+            <ResetSearchButton onClick={ResetTable}>reset</ResetSearchButton>
+            <SearchButton onClick={searchDocuments}>Search</SearchButton>
+          </ResetContainer>
         </SearchContainer>
       </Container>
       <AddButton onClick={addField}>+</AddButton>
