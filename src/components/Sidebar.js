@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { BsDatabaseFillAdd ,BsTrash} from "react-icons/bs";
+import { BsDatabaseFillAdd, BsTrash } from "react-icons/bs";
 import { IoMdAdd } from "react-icons/io";
-import {GrTableAdd} from "react-icons/gr";
+import { GrTableAdd } from "react-icons/gr";
 import { BiEdit } from "react-icons/bi";
 import axios from "axios";
 
-
-
 const SidebarContainer = styled.div`
-  background-color: #FFF; ;
+  background-color: #fff;
   border-right: 1px solid #ccc;
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
@@ -135,7 +133,7 @@ const ModalButton = styled.button`
   cursor: pointer;
 `;
 
-const Modal = ({ show, onClose, onSave,initialValue  }) => {
+const Modal = ({ show, onClose, onSave, initialValue }) => {
   const [inputValue, setInputValue] = useState(initialValue || "");
 
   const handleSave = () => {
@@ -245,7 +243,7 @@ const Sidebar = ({
   };
 
   const fetchCollections = (databaseName, tableName) => {
-    console.log(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
+    console.log(`http://127.0.0.1:8000/${databaseName}/${tableName}`);
     axios
       .get(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
       .then((response) => {
@@ -332,8 +330,6 @@ const Sidebar = ({
       .catch((error) => console.error("Error updating table:", error));
   };
 
-
-
   const handleAddDatabaseClick = () => {
     console.log("Add database");
     setModalType("database");
@@ -360,12 +356,9 @@ const Sidebar = ({
     setShowModal(true);
   };
 
-
-  
-  
   const handleDeleteDatabaseClick = (database) => {
-    const url = `http://127.0.0.1:8000/${database.name}`
-    console.log(url)
+    const url = `http://127.0.0.1:8000/${database.name}`;
+    console.log(url);
     // const url = `http://127.0.0.1:8000/Clients`
     console.log("Delete database:", database.name);
     axios
@@ -376,7 +369,7 @@ const Sidebar = ({
       })
       .catch((error) => console.error("Error deleting database:", error));
   };
-  
+
   const handleDeleteTableClick = (table) => {
     console.log("Delete table:", table.name);
     axios
@@ -387,6 +380,7 @@ const Sidebar = ({
       })
       .catch((error) => console.error("Error deleting table:", error));
   };
+
   const handleSave = (name) => {
     if (modalType === "database") {
       if (editedItem) {
@@ -407,6 +401,7 @@ const Sidebar = ({
     }
     setEditedItem(null);
     setShowModal(false);
+
   };
   return (
     <SidebarContainer>
@@ -427,20 +422,21 @@ const Sidebar = ({
             {database.name}
             <IconHolder>
               <AddButton
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleAddTableClick(database);
                 }}
               >
                 <IoMdAdd size={15} />
-             
+              </AddButton>
               <ModifyButton
-              onClick={() => {
-                handleModifyDatabaseClick(database);
-              }}
-            >
-              <BiEdit size={15} />
-            </ModifyButton>
-            </AddButton>
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModifyDatabaseClick(database);
+                }}
+              >
+                <BiEdit size={15} />
+              </ModifyButton>
               <RecycleBinButton
                 onClick={() => {
                   handleDeleteDatabaseClick(database);
@@ -459,17 +455,19 @@ const Sidebar = ({
                   fetchCollections(database.name, table.name);
                 }}
               >
-                <GrTableAdd style={{margin : '0 5px 0 0', fontSize: "1.5em"}}/>
+                <GrTableAdd
+                  style={{ margin: "0 5px 0 0", fontSize: "1.5em" }}
+                />
                 {table.name}
                 <IconHolder>
-                <ModifyButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleModifyTableClick(table);
-                  }}
-                >
-                  <BiEdit size={15} />
-                </ModifyButton>
+                  <ModifyButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleModifyTableClick(table);
+                    }}
+                  >
+                    <BiEdit size={15} />
+                  </ModifyButton>
                   <p> </p>
 
                   <RecycleBinButton
@@ -486,10 +484,10 @@ const Sidebar = ({
         </React.Fragment>
       ))}
       <Modal
-  show={showModal}
-  onClose={() => setShowModal(false)}
-  onSave={handleSave}
-/>
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        onSave={handleSave}
+      />
     </SidebarContainer>
   );
 };

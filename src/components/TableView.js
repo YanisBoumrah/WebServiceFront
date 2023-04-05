@@ -36,7 +36,6 @@ const Table = styled.table`
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-
 `;
 
 const UpperContainer = styled.div`
@@ -44,9 +43,7 @@ const UpperContainer = styled.div`
   flex-direction: row;
   align-items: center;
 `;
-const LowerContainer = styled.div`
-  
-`;
+const LowerContainer = styled.div``;
 
 const ShowSearch = styled.div`
   position: relative;
@@ -165,14 +162,13 @@ const AddButton = styled.button`
   text-align: center;
 `;
 const AddSearchButton = styled.button`
-position: relative;
+  position: relative;
   background-color: transparent;
   border: none;
   color: #009879;
   font-size: 1.2rem; // Smaller font size
   font-weight: bold;
   text-align: center;
-  
 `;
 
 const CreateButton = styled.button`
@@ -379,165 +375,170 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
     <>
       <h3>Table: {selectedTable.name}</h3>
       <Container>
-      <UpperContainer>
-        <Table key={Math.random()}>
-          <thead>
-            <tr key={Math.random()}>
-              {collections &&
-              collections.documents &&
-              Object.keys(collections.documents).length > 0 ? (
-                Object.keys(
-                  collections.documents[Object.keys(collections.documents)[0]]
-                ).map((key) => <th key={key.id}>{key}</th>)
+        <UpperContainer>
+          <Table key={Math.random()}>
+            <thead>
+              <tr key={Math.random()}>
+                {collections &&
+                collections.documents &&
+                Object.keys(collections.documents).length > 0 ? (
+                  Object.keys(
+                    collections.documents[Object.keys(collections.documents)[0]]
+                  ).map((key) => <th key={key.id}>{key}</th>)
+                ) : (
+                  <tr>
+                    <td colSpan="100%">No collections found.</td>
+                  </tr>
+                )}
+              </tr>
+            </thead>
+
+            <tbody>
+              {collections && collections.documents ? (
+                Object.keys(collections.documents).length > 0 ? (
+                  Object.entries(collections.documents).map(([id, row]) => (
+                    <tr key={id}>
+                      {row &&
+                        Object.keys(row).map((column) => (
+                          <td key={column}>
+                            <EditableCell
+                              value={row[column]}
+                              onValueChange={(newValue) =>
+                                updateDocumentAttribute(id, column, newValue)
+                              }
+                            />
+                          </td>
+                        ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="100%">No results found.</td>
+                  </tr>
+                )
               ) : (
                 <tr>
                   <td colSpan="100%">No collections found.</td>
                 </tr>
               )}
-            </tr>
-          </thead>
+            </tbody>
+          </Table>
 
-          <tbody>
-            {collections && collections.documents ? (
-              Object.keys(collections.documents).length > 0 ? (
-                Object.entries(collections.documents).map(([id, row]) => (
-                  <tr key={id}>
-                    {row &&
-                      Object.keys(row).map((column) => (
-                        <td key={column}>
-                          <EditableCell
-                            value={row[column]}
-                            onValueChange={(newValue) =>
-                              updateDocumentAttribute(id, column, newValue)
-                            }
-                          />
-                        </td>
-                      ))}
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="100%">No results found.</td>
-                </tr>
-              )
-            ) : (
-              <tr>
-                <td colSpan="100%">No collections found.</td>
-              </tr>
-            )}
-          </tbody>
-          
-        </Table>
+          <div>
+            <ShowSearch
+              onClick={() => setShowSearch((prevState) => !prevState)}
+            >
+              {showSearch ? "hide" : "show"}
+            </ShowSearch>
+            {showSearch && (
+              <SearchContainer>
+                <SearchConditions>
+                  {searchConditions.map((condition, index) => (
+                    <Div key={index}>
+                      <AddSearchButton onClick={addSearchField}>
+                        +
+                      </AddSearchButton>
+                      {/* Key dropdown */}
+                      <SelectAttribute
+                        value={condition.key}
+                        onChange={(e) => {
+                          setSearchConditions((prevConditions) => {
+                            const updatedConditions = [...prevConditions];
+                            updatedConditions[index].key = e.target.value;
+                            return updatedConditions;
+                          });
+                        }}
+                      >
+                        {collections &&
+                          collections.documents &&
+                          Object.keys(collections.documents).length > 0 &&
+                          Object.keys(
+                            collections.documents[
+                              Object.keys(collections.documents)[0]
+                            ]
+                          ).map((key) => (
+                            <option key={key} value={key}>
+                              {key}
+                            </option>
+                          ))}
+                      </SelectAttribute>
 
-        
-        <div>
-        <ShowSearch onClick={() => setShowSearch((prevState) => !prevState)}>
-          {showSearch ? "hide" : "show"}
-        </ShowSearch>  
-        {showSearch && (
- <SearchContainer>
-        
-          <SearchConditions>
-            {searchConditions.map((condition, index) => (
-              <Div key={index}>
-              <AddSearchButton onClick={addSearchField}>+</AddSearchButton>
-                {/* Key dropdown */}
-                <SelectAttribute
-                  value={condition.key}
-                  onChange={(e) => {
-                    setSearchConditions((prevConditions) => {
-                      const updatedConditions = [...prevConditions];
-                      updatedConditions[index].key = e.target.value;
-                      return updatedConditions;
-                    });
-                  }}
-                >
-                  {collections &&
-                    collections.documents &&
-                    Object.keys(collections.documents).length > 0 &&
-                    Object.keys(
-                      collections.documents[
-                        Object.keys(collections.documents)[0]
-                      ]
-                    ).map((key) => (
-                      <option key={key} value={key}>
-                        {key}
-                      </option>
-                    ))}
-                </SelectAttribute>
+                      {/* Operator dropdown */}
+                      <SelectOperator
+                        value={condition.operator}
+                        onChange={(e) => {
+                          setSearchConditions((prevConditions) => {
+                            const updatedConditions = [...prevConditions];
+                            updatedConditions[index].operator = e.target.value;
+                            return updatedConditions;
+                          });
+                        }}
+                      >
+                        {operators.map((operator) => (
+                          <option key={operator.value} value={operator.value}>
+                            {operator.label}
+                          </option>
+                        ))}
+                      </SelectOperator>
 
-                {/* Operator dropdown */}
-                <SelectOperator
-                  value={condition.operator}
-                  onChange={(e) => {
-                    setSearchConditions((prevConditions) => {
-                      const updatedConditions = [...prevConditions];
-                      updatedConditions[index].operator = e.target.value;
-                      return updatedConditions;
-                    });
-                  }}
-                >
-                  {operators.map((operator) => (
-                    <option key={operator.value} value={operator.value}>
-                      {operator.label}
-                    </option>
+                      {/* Search term input */}
+                      <SearchTerm
+                        type="text"
+                        value={condition.term}
+                        onChange={(e) => {
+                          setSearchConditions((prevConditions) => {
+                            const updatedConditions = [...prevConditions];
+                            updatedConditions[index].term = e.target.value;
+                            return updatedConditions;
+                          });
+                        }}
+                        placeholder="Search term"
+                      />
+                      <DeleteSearchField
+                        onClick={() => deleteSearchField(index)}
+                      >
+                        <RxCrossCircled />
+                      </DeleteSearchField>
+                    </Div>
                   ))}
-                </SelectOperator>
+                </SearchConditions>
 
-                {/* Search term input */}
-                <SearchTerm
-                  type="text"
-                  value={condition.term}
-                  onChange={(e) => {
-                    setSearchConditions((prevConditions) => {
-                      const updatedConditions = [...prevConditions];
-                      updatedConditions[index].term = e.target.value;
-                      return updatedConditions;
-                    });
-                  }}
-                  placeholder="Search term"
-                />
-                <DeleteSearchField onClick={() => deleteSearchField(index)}>
-                  <RxCrossCircled />
-                </DeleteSearchField>
-              </Div>
-            ))}
-          </SearchConditions>
-
-          <ResetContainer>
-            <ResetSearchButton onClick={ResetTable}>reset</ResetSearchButton>
-            <SearchButton onClick={searchDocuments}>Search</SearchButton>
-          </ResetContainer>
-        </SearchContainer>
-        )}
-        </div>
+                <ResetContainer>
+                  <ResetSearchButton onClick={ResetTable}>
+                    reset
+                  </ResetSearchButton>
+                  <SearchButton onClick={searchDocuments}>Search</SearchButton>
+                </ResetContainer>
+              </SearchContainer>
+            )}
+          </div>
         </UpperContainer>
         <LowerContainer>
-      <AddButton onClick={addField}>+</AddButton>
-      {newFields.map((field, index) => (
-        <div key={index}>
-          <FieldInput
-            value={field.key}
-            onChange={(e) =>
-              handleFieldChange(index, e.target.value, field.value)
-            }
-            placeholder="Key"
-          />
-          <FieldInput
-            value={field.value}
-            onChange={(e) =>
-              handleFieldChange(index, field.key, e.target.value)
-            }
-            placeholder="Value"
-          />
-        </div>
-      ))}
-      <CreateButton onClick={createNewDocument}>Create document</CreateButton>{" "}
-      </LowerContainer>
+          <AddButton onClick={addField}>+</AddButton>
+          {newFields.map((field, index) => (
+            <div key={index}>
+              <FieldInput
+                value={field.key}
+                onChange={(e) =>
+                  handleFieldChange(index, e.target.value, field.value)
+                }
+                placeholder="Key"
+              />
+              <FieldInput
+                value={field.value}
+                onChange={(e) =>
+                  handleFieldChange(index, field.key, e.target.value)
+                }
+                placeholder="Value"
+              />
+            </div>
+          ))}
+          <CreateButton onClick={createNewDocument}>
+            Create document
+          </CreateButton>{" "}
+        </LowerContainer>
       </Container>
-
     </>
-
   );
 };
 
