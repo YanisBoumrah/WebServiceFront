@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { BsDatabaseFillAdd ,BsTrash} from "react-icons/bs";
 import { IoMdAdd } from "react-icons/io";
 import {GrTableAdd} from "react-icons/gr";
+import { BiEdit } from "react-icons/bi";
 import axios from "axios";
 
 
@@ -113,6 +114,17 @@ const ModalInput = styled.input`
   border: 1px solid #ccc;
 `;
 
+const ModifyButton = styled.button`
+  background-color: transparent;
+  border: none;
+  font-size: 1.2em;
+  color: #909090;
+  cursor: pointer;
+
+  &:hover {
+    color: #707070;
+  }
+`;
 const ModalButton = styled.button`
   background-color: ${(props) => (props.primary ? "#009879" : "#ccc")};
   color: #fff;
@@ -123,8 +135,8 @@ const ModalButton = styled.button`
   cursor: pointer;
 `;
 
-const Modal = ({ show, onClose, onSave }) => {
-  const [inputValue, setInputValue] = useState("");
+const Modal = ({ show, onClose, onSave,initialValue  }) => {
+  const [inputValue, setInputValue] = useState(initialValue || "");
 
   const handleSave = () => {
     onSave(inputValue);
@@ -136,6 +148,9 @@ const Modal = ({ show, onClose, onSave }) => {
     setInputValue("");
     onClose();
   };
+  useEffect(() => {
+    setInputValue(initialValue);
+  }, [initialValue]);
 
   if (!show) return null;
 
@@ -167,6 +182,7 @@ const Sidebar = ({
   const [tables, setTables] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(null);
+  const [editedItem, setEditedItem] = useState(null);
 
   useEffect(() => {
     fetchDatabases();
@@ -287,6 +303,36 @@ const Sidebar = ({
       })
       .catch((error) => console.error("Error creating table:", error));
   };
+  const updateDatabase = (oldName, newName) => {
+    const body = {
+      newName: newName,
+    };
+    axios
+      .put(`http://127.0.0.1:8000/${oldName}`, JSON.stringify(body))
+      .then((response) => {
+        console.log("Database updated:", response.data);
+        fetchDatabases();
+      })
+      .catch((error) => console.error("Error updating database:", error));
+  };
+
+  const updateTable = (databaseName, oldName, newName) => {
+    const body = {
+      newCollectionName: newName,
+    };
+    axios
+      .put(
+        `http://127.0.0.1:8000/${databaseName}/${oldName}`,
+        JSON.stringify(body)
+      )
+      .then((response) => {
+        console.log("Table updated:", response.data);
+        fetchTables(databaseName);
+      })
+      .catch((error) => console.error("Error updating table:", error));
+  };
+
+
 
   const handleAddDatabaseClick = () => {
     console.log("Add database");
@@ -299,6 +345,23 @@ const Sidebar = ({
     setModalType("table");
     setShowModal(true);
   };
+
+  const handleModifyDatabaseClick = (database) => {
+    console.log("Modify database:", database.name);
+    setModalType("database");
+    setEditedItem(database);
+    setShowModal(true);
+  };
+
+  const handleModifyTableClick = (table) => {
+    console.log("Modify table:", table.name);
+    setModalType("table");
+    setEditedItem(table);
+    setShowModal(true);
+  };
+
+
+  
   
   const handleDeleteDatabaseClick = (database) => {
     const url = `http://127.0.0.1:8000/${database.name}`
@@ -326,12 +389,23 @@ const Sidebar = ({
   };
   const handleSave = (name) => {
     if (modalType === "database") {
-      console.log("Save database:", name);
-      createDatabase(name);
+      if (editedItem) {
+        console.log("Update database:", name);
+        updateDatabase(editedItem.name, name);
+      } else {
+        console.log("Save database:", name);
+        createDatabase(name);
+      }
     } else if (modalType === "table") {
-      console.log("Save table:", name);
-      createTable(name);
+      if (editedItem) {
+        console.log("Update table:", name);
+        updateTable(selectedDatabase.name, editedItem.name, name);
+      } else {
+        console.log("Save table:", name);
+        createTable(name);
+      }
     }
+    setEditedItem(null);
     setShowModal(false);
   };
   return (
@@ -358,7 +432,15 @@ const Sidebar = ({
                 }}
               >
                 <IoMdAdd size={15} />
-              </AddButton>
+             
+              <ModifyButton
+              onClick={() => {
+                handleModifyDatabaseClick(database);
+              }}
+            >
+              <BiEdit size={15} />
+            </ModifyButton>
+            </AddButton>
               <RecycleBinButton
                 onClick={() => {
                   handleDeleteDatabaseClick(database);
@@ -380,7 +462,16 @@ const Sidebar = ({
                 <GrTableAdd style={{margin : '0 5px 0 0', fontSize: "1.5em"}}/>
                 {table.name}
                 <IconHolder>
+                <ModifyButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleModifyTableClick(table);
+                  }}
+                >
+                  <BiEdit size={15} />
+                </ModifyButton>
                   <p> </p>
+
                   <RecycleBinButton
                     onClick={(e) => {
                       e.stopPropagation();
@@ -395,10 +486,10 @@ const Sidebar = ({
         </React.Fragment>
       ))}
       <Modal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        onSave={handleSave}
-      />
+  show={showModal}
+  onClose={() => setShowModal(false)}
+  onSave={handleSave}
+/>
     </SidebarContainer>
   );
 };

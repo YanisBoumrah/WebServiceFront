@@ -34,19 +34,37 @@ const Table = styled.table`
 `;
 
 const Container = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  grid-gap: 150px;
+  display: flex;
+  flex-direction: column;
 
+`;
+
+const UpperContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+`;
+const LowerContainer = styled.div`
+  
+`;
+
+const ShowSearch = styled.div`
+  position: relative;
+  width: 200px;
+  height: 50px;
 `;
 
 const SearchContainer = styled.div`
   margin: 20px 0 0 0;
-  width: 50%;
+  padding: 30px;
+  width: 500px;
   height: auto;
   display: flex;
   flex-direction: column;
   margin-left: 20px;
+  border: 3px solid black;
+  border-radius: 3px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 `;
 
 const SelectAttribute = styled.select`
@@ -191,6 +209,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
   const [collections, setCollections] = useState([]);
   const [newFields, setNewFields] = useState([]);
   const [maxFields, setMaxFields] = useState(null);
+  const [showSearch, setShowSearch] = useState(false);
 
   const operators = [
     { value: ">", label: ">" },
@@ -360,6 +379,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
     <>
       <h3>Table: {selectedTable.name}</h3>
       <Container>
+      <UpperContainer>
         <Table key={Math.random()}>
           <thead>
             <tr key={Math.random()}>
@@ -406,8 +426,17 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
               </tr>
             )}
           </tbody>
+          
         </Table>
-        <SearchContainer>
+
+        
+        <div>
+        <ShowSearch onClick={() => setShowSearch((prevState) => !prevState)}>
+          {showSearch ? "hide" : "show"}
+        </ShowSearch>  
+        {showSearch && (
+ <SearchContainer>
+        
           <SearchConditions>
             {searchConditions.map((condition, index) => (
               <Div key={index}>
@@ -480,7 +509,10 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
             <SearchButton onClick={searchDocuments}>Search</SearchButton>
           </ResetContainer>
         </SearchContainer>
-      </Container>
+        )}
+        </div>
+        </UpperContainer>
+        <LowerContainer>
       <AddButton onClick={addField}>+</AddButton>
       {newFields.map((field, index) => (
         <div key={index}>
@@ -501,7 +533,11 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
         </div>
       ))}
       <CreateButton onClick={createNewDocument}>Create document</CreateButton>{" "}
+      </LowerContainer>
+      </Container>
+
     </>
+
   );
 };
 
