@@ -33,7 +33,7 @@ const Header = () => {
   <HeaderContainer>
   <ContentContainer>
   <Img src={img} ></Img>
-  Watermelon DB
+  Wt-DB
   </ContentContainer>
   </HeaderContainer>
   

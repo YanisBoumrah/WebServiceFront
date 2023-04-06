@@ -182,6 +182,17 @@ const CreateButton = styled.button`
     background-color: #007f67;
   }
 `;
+const DeleteButton = styled.button`
+  border: none;
+  background-color: transparent;
+  color: #c0392b;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  &:hover {
+    color: #e74c3c;
+  }
+`;
 const FieldInput = styled.input`
   padding: 5px;
   font-size: 1rem;
@@ -277,8 +288,15 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
   };
   const deleteSearchField = (index) => {
     const updatedConditions = [...searchConditions];
-    updatedConditions.splice(index, 1);
-    setSearchConditions(updatedConditions);
+    if (updatedConditions.length === 1) {
+      // There is only one condition, so we cannot delete it
+      window.alert("Il doit y avoir au moins une condition de recherche.");
+      return;
+    }
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) { 
+      updatedConditions.splice(index, 1);
+      setSearchConditions(updatedConditions);
+    }
   };
   const ResetTable = () => {
     fetchCollections();
@@ -328,6 +346,18 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
       fetchCollections();
     } catch (error) {
       console.error("Failed to update document attribute:", error);
+    }
+  };
+
+  const deleteDocument = async (id) => {
+    try {
+      if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) { 
+      await axios.delete(
+        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}/${id}`
+      );
+      fetchCollections();}
+    } catch (error) {
+      console.error("Failed to delete document:", error);
     }
   };
 
@@ -393,34 +423,41 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
             </thead>
 
             <tbody>
-              {collections && collections.documents ? (
-                Object.keys(collections.documents).length > 0 ? (
-                  Object.entries(collections.documents).map(([id, row]) => (
-                    <tr key={id}>
-                      {row &&
-                        Object.keys(row).map((column) => (
-                          <td key={column}>
-                            <EditableCell
-                             value={typeof row[column] === 'string' ? row[column].replace(/%20/g, ' ').replace(/%2520/g, ' ') : row[column] || ""}
-                              onValueChange={(newValue) =>
-                                updateDocumentAttribute(id, column, encodeURIComponent(newValue))
-                              }
-                            />
-                          </td>
-                        ))}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="100%">No results found.</td>
-                  </tr>
-                )
-              ) : (
-                <tr>
-                  <td colSpan="100%">No collections found.</td>
-                </tr>
-              )}
-            </tbody>
+  {collections && collections.documents ? (
+    Object.keys(collections.documents).length > 0 ? (
+      Object.entries(collections.documents).map(([id, row]) => (
+ 
+        <tr key={id}>
+          {row &&
+            Object.keys(row).map((column) => (
+              <td key={column}>
+                <EditableCell
+                   value={typeof row[column] === 'string' ? row[column].replace(/%20/g, ' ').replace(/%2520/g, ' ') : row[column] || ""}
+                  onValueChange={(newValue) =>
+                    updateDocumentAttribute(id, column, newValue)
+                  }
+                />
+              </td>
+            ))}
+          <td >
+            <DeleteButton onClick={() => deleteDocument(id)}>
+              <RxCrossCircled />
+            </DeleteButton>
+          </td>
+        </tr>
+       
+      ))
+    ) : (
+      <tr>
+        <td colSpan="100%">No results found.</td>
+      </tr>
+    )
+  ) : (
+    <tr>
+      <td colSpan="100%">No collections found.</td>
+    </tr>
+  )}
+</tbody>
           </Table>
 
          

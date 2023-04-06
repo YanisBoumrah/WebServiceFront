@@ -17,7 +17,7 @@ const FooterContainer = styled.footer`
 const Footer = () => {
   return (
     <FooterContainer>
-      Watermelon DB &copy; {new Date().getFullYear()} - Created by Yanis Boumrah
+      Wt-DB &copy; {new Date().getFullYear()} - Created by Yanis Boumrah
       and Yanis Bouzelha
     </FooterContainer>
   );

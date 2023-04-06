@@ -361,17 +361,19 @@ const Sidebar = ({
     console.log(url);
     // const url = `http://127.0.0.1:8000/Clients`
     console.log("Delete database:", database.name);
-    axios
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette base de donnée ?")) { 
+      axios
       .delete(url)
       .then((response) => {
         console.log("Database deleted:", response.data);
         fetchDatabases(); // fetch updated database list
       })
       .catch((error) => console.error("Error deleting database:", error));
-  };
+  };}
 
   const handleDeleteTableClick = (table) => {
     console.log("Delete table:", table.name);
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette table?")) {
     axios
       .delete(`http://127.0.0.1:8000/${selectedDatabase.name}/${table.name}`)
       .then((response) => {
@@ -380,6 +382,7 @@ const Sidebar = ({
       })
       .catch((error) => console.error("Error deleting table:", error));
   };
+}
 
   const handleSave = (name) => {
     if (modalType === "database") {
