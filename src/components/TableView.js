@@ -59,9 +59,6 @@ const SearchContainer = styled.div`
   display: flex;
   flex-direction: column;
   margin-left: 20px;
-  border: 3px solid black;
-  border-radius: 3px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 `;
 
 const SelectAttribute = styled.select`
@@ -323,6 +320,8 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
 
   const updateDocumentAttribute = async (id, attribute, value) => {
     try {
+      attribute = encodeURIComponent(attribute); // replace spaces with %20
+      value = encodeURIComponent(value);
       await axios.put(
         `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}/${id}?${attribute}=${value}`
       );
@@ -402,9 +401,9 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
                         Object.keys(row).map((column) => (
                           <td key={column}>
                             <EditableCell
-                              value={row[column]}
+                             value={typeof row[column] === 'string' ? row[column].replace(/%20/g, ' ').replace(/%2520/g, ' ') : row[column] || ""}
                               onValueChange={(newValue) =>
-                                updateDocumentAttribute(id, column, newValue)
+                                updateDocumentAttribute(id, column, encodeURIComponent(newValue))
                               }
                             />
                           </td>
@@ -424,13 +423,7 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
             </tbody>
           </Table>
 
-          <div>
-            <ShowSearch
-              onClick={() => setShowSearch((prevState) => !prevState)}
-            >
-              {showSearch ? "hide" : "show"}
-            </ShowSearch>
-            {showSearch && (
+         
               <SearchContainer>
                 <SearchConditions>
                   {searchConditions.map((condition, index) => (
@@ -510,8 +503,6 @@ const TableView = ({ selectedDatabase, selectedTable }) => {
                   <SearchButton onClick={searchDocuments}>Search</SearchButton>
                 </ResetContainer>
               </SearchContainer>
-            )}
-          </div>
         </UpperContainer>
         <LowerContainer>
           <AddButton onClick={addField}>+</AddButton>
