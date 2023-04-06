@@ -10,7 +10,6 @@ import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
   body, html {
-    overflow: hidden;
   }
 `; 
 
@@ -20,7 +19,6 @@ const Wrapper = styled.div`
   background-color: rgb(247, 247, 247);
 height:100vh; 
  padding: 20px;
- overflow: hidden; /* add this line to hide the scrollbar */
 
 `;
 
@@ -55,7 +53,6 @@ function App() {
         />
         <MainView selectedTable={selectedTable} selectedDatabase={selectedDatabase} />
       </Wrapper>
-      <Footer />
     </>
   );
 }
