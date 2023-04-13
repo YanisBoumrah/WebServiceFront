@@ -4,6 +4,387 @@ import axios from "axios";
 import EditableCell from "./EditableCell";
 import { RxCrossCircled } from "react-icons/rx";
 
+
+
+const TableView = ({ selectedDatabase, selectedTable }) => {
+  const [collections, setCollections] = useState([]);
+  const [newFields, setNewFields] = useState([]);
+  const [maxFields, setMaxFields] = useState(null);
+  const [showSearch, setShowSearch] = useState(false);
+
+  const operators = [
+    { value: ">", label: ">" },
+    { value: "<", label: "<" },
+    { value: "<=", label: "<=" },
+    { value: ">=", label: ">=" },
+    { value: "=", label: "Egale" },
+    { value: "!=", label: "Diff" },
+  ];
+
+  const [searchConditions, setSearchConditions] = useState([
+    { key: "", operator: ">", term: "" },
+  ]);
+
+  const fetchCollections = async () => {
+    try {
+      const response = await axios.get(
+        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
+      );
+      setCollections(response.data);
+      // console.log("", response.data);
+
+      // Update maxFields when collections are fetched
+      if (
+        response.data &&
+        response.data.documents &&
+        Object.keys(response.data.documents).length > 0
+      ) {
+        const firstDocument =
+          response.data.documents[Object.keys(response.data.documents)[0]];
+        setMaxFields(Object.keys(firstDocument).length);
+      } else {
+        setMaxFields(null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch collections:", error);
+    }
+  };
+
+  const searchDocuments = async () => {
+    try {
+      const query = searchConditions
+        .filter(
+          (condition) => condition.key && condition.operator && condition.term
+        )
+        .map(
+          (condition, index) =>
+            `${condition.key}${condition.operator}${condition.term}${
+              index < searchConditions.length - 1 ? "&" : ""
+            }`
+        )
+        .join("&");
+
+      console.log("je suis la query", query);
+      if (query) {
+        const response = await axios.get(
+          `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}?${query}`
+        );
+        // console.log("response", response);
+        setCollections({ documents: response.data });
+      }
+    } catch (error) {
+      console.error("Failed to search documents:", error);
+    }
+  };
+
+  const addSearchField = () => {
+    setSearchConditions([
+      ...searchConditions,
+      { key: "", operator: ">", term: "" },
+    ]);
+  };
+  const deleteSearchField = (index) => {
+    if (searchConditions.length === 1) {
+      alert("Impossible de supprimer le dernier champ de recherche !");
+      return;
+    }
+    
+    const updatedConditions = [...searchConditions];
+    updatedConditions.splice(index, 1);
+    setSearchConditions(updatedConditions);
+  };
+  const ResetTable = () => {
+    fetchCollections();
+  };
+
+  const addField = () => {
+    if (!maxFields || newFields.length < maxFields) {
+      setNewFields([...newFields, { key: "", value: "" }]);
+    } else {
+      alert(`You can't add more than ${maxFields} fields.`);
+    }
+  };
+
+  const handleFieldChange = (index, key, value) => {
+    const updatedFields = [...newFields];
+    updatedFields[index] = { key, value };
+    setNewFields(updatedFields);
+  };
+
+  const createNewDocument = async () => {
+    const newDocument = newFields.reduce((doc, field) => {
+      doc[field.key] = field.value;
+      // console.log(doc);
+      return doc;
+    }, {});
+
+    try {
+      await axios.post(
+        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`,
+        JSON.stringify(newDocument)
+      );
+      alert("Document created");
+      setNewFields([]);
+      fetchCollections();
+    } catch (error) {
+      console.error("Failed to create document:", error);
+    }
+  };
+
+  const updateDocumentAttribute = async (id, attribute, value) => {
+    try {
+      attribute = encodeURIComponent(attribute); // replace spaces with %20
+      value = encodeURIComponent(value);
+      await axios.put(
+        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}/${id}?${attribute}=${value}`
+      );
+      fetchCollections();
+    } catch (error) {
+      console.error("Failed to update document attribute:", error);
+    }
+  };
+
+  const deleteDocument = async (id) => {
+    try {
+      const confirmed = window.confirm("Êtes-vous sûr de vouloir supprimer ce document ?");
+      if (!confirmed) {
+        return;
+      }
+      
+      await axios.delete(
+        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}/${id}`
+      );
+      fetchCollections();
+    } catch (error) {
+      console.error("Failed to delete document:", error);
+    }
+  };
+  
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const response = await axios.get(
+          `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
+        );
+        setCollections(response.data);
+        // console.log("i'm here", response.data);
+
+        for (const id in response.data.documents) {
+          // console.log("i'm id", id);
+        }
+
+        // Update search conditions with the first key by default
+        if (
+          response.data &&
+          response.data.documents &&
+          Object.keys(response.data.documents).length > 0
+        ) {
+          const firstDocument =
+            response.data.documents[Object.keys(response.data.documents)[0]];
+          setMaxFields(Object.keys(firstDocument).length);
+          const firstKey = Object.keys(firstDocument)[0];
+          setSearchConditions((prevConditions) => {
+            const updatedConditions = [...prevConditions];
+            updatedConditions[0].key = firstKey;
+            return updatedConditions;
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch collections:", error);
+      }
+    };
+
+    if (selectedDatabase && selectedTable) {
+      fetchCollections();
+    }
+  }, [selectedDatabase, selectedTable]);
+
+  return (
+    <>
+      <h3>Table: {selectedTable.name}</h3>
+      <Container>
+        <UpperContainer>
+          <Table key={Math.random()}>
+            <thead>
+              <tr key={Math.random()}>
+                {collections &&
+                collections.documents &&
+                Object.keys(collections.documents).length > 0 ? (
+                  Object.keys(
+                    collections.documents[Object.keys(collections.documents)[0]]
+                  ).map((key) => <th key={key.id}>{key}</th>)
+                ) : (
+                  <tr>
+                    <td colSpan="100%">No collections found.</td>
+                  </tr>
+                )}
+              </tr>
+            </thead>
+
+            <tbody>
+  {collections && collections.documents ? (
+    Object.keys(collections.documents).length > 0 ? (
+      Object.entries(collections.documents).map(([id, row]) => (
+        <>
+        <tr key={id}>
+          {row &&
+            Object.keys(row).map((column) => (
+              <td key={column}>
+                <EditableCell
+                   value={typeof row[column] === 'string' ? row[column].replace(/%20/g, ' ').replace(/%2520/g, ' ') : row[column] || ""}
+                  onValueChange={(newValue) =>
+                    updateDocumentAttribute(id, column, newValue)
+                  }
+                />
+              </td>
+            ))}
+          <td >
+            <DeleteButton onClick={() => deleteDocument(id)}>
+              <RxCrossCircled />
+            </DeleteButton>
+          </td>
+        </tr>
+        
+        </>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="100%">No results found.</td>
+      </tr>
+    )
+  ) : (
+    <tr>
+      <td colSpan="100%">No collections found.</td>
+    </tr>
+  )}
+</tbody>
+          </Table>
+
+         
+              <SearchContainer>
+                <SearchConditions>
+                  {searchConditions.map((condition, index) => (
+                    <Div key={index}>
+                      <AddSearchButton onClick={addSearchField}>
+                        +
+                      </AddSearchButton>
+                      {/* Key dropdown */}
+                      <SelectAttribute
+                        value={condition.key}
+                        onChange={(e) => {
+                          setSearchConditions((prevConditions) => {
+                            const updatedConditions = [...prevConditions];
+                            updatedConditions[index].key = e.target.value;
+                            return updatedConditions;
+                          });
+                        }}
+                      >
+                        {collections &&
+                          collections.documents &&
+                          Object.keys(collections.documents).length > 0 &&
+                          Object.keys(
+                            collections.documents[
+                              Object.keys(collections.documents)[0]
+                            ]
+                          ).map((key) => (
+                            <option key={key} value={key}>
+                              {key}
+                            </option>
+                          ))}
+                      </SelectAttribute>
+
+                      {/* Operator dropdown */}
+                      <SelectOperator
+                        value={condition.operator}
+                        onChange={(e) => {
+                          setSearchConditions((prevConditions) => {
+                            const updatedConditions = [...prevConditions];
+                            updatedConditions[index].operator = e.target.value;
+                            return updatedConditions;
+                          });
+                        }}
+                      >
+                        {operators.map((operator) => (
+                          <option key={operator.value} value={operator.value}>
+                            {operator.label}
+                          </option>
+                        ))}
+                      </SelectOperator>
+
+                      {/* Search term input */}
+                      <SearchTerm
+                        type="text"
+                        value={condition.term}
+                        onChange={(e) => {
+                          setSearchConditions((prevConditions) => {
+                            const updatedConditions = [...prevConditions];
+                            updatedConditions[index].term = e.target.value;
+                            return updatedConditions;
+                          });
+                        }}
+                        placeholder="Search term"
+                      />
+                      <DeleteSearchField
+                        onClick={() => deleteSearchField(index)}
+                      >
+                        <RxCrossCircled />
+                      </DeleteSearchField>
+                    </Div>
+                  ))}
+                </SearchConditions>
+
+                <ResetContainer>
+                  <ResetSearchButton onClick={ResetTable}>
+                    reset
+                  </ResetSearchButton>
+                  <SearchButton onClick={searchDocuments}>Search</SearchButton>
+                </ResetContainer>
+              </SearchContainer>
+        </UpperContainer>
+        <LowerContainer>
+        <div>
+          <AddButton onClick={addField}>+</AddButton></div>
+          <DivInputs>
+          {newFields.map((field, index) => (
+            <div key={index}>
+              <FieldInput
+                value={field.key}
+                onChange={(e) =>
+                  handleFieldChange(index, e.target.value, field.value)
+                }
+                placeholder="Key"
+              />
+              <FieldInput
+                value={field.value}
+                onChange={(e) =>
+                  handleFieldChange(index, field.key, e.target.value)
+                }
+                placeholder="Value"
+              />
+            </div>
+          ))}
+          </DivInputs>
+          <div>
+          <CreateButton onClick={createNewDocument}>
+            Create document
+          </CreateButton>{" "}</div>
+        </LowerContainer>
+      </Container>
+    </>
+  );
+};
+
+export default TableView;
+
+
+
+const DivInputs = styled.div`
+padding: 10px;
+`;
+
+
+
 const Table = styled.table`
   border-collapse: collapse;
   margin: 20px 0;
@@ -43,7 +424,11 @@ const UpperContainer = styled.div`
   flex-direction: row;
   align-items: center;
 `;
-const LowerContainer = styled.div``;
+const LowerContainer = styled.div`
+  display: flex;
+  padding: 50px;
+  align-items: center;
+`;
 
 const ShowSearch = styled.div`
   position: relative;
@@ -182,6 +567,17 @@ const CreateButton = styled.button`
     background-color: #007f67;
   }
 `;
+const DeleteButton = styled.button`
+  border: none;
+  background-color: transparent;
+  color: #c0392b;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+  &:hover {
+    color: #e74c3c;
+  }
+`;
 const FieldInput = styled.input`
   padding: 5px;
   font-size: 1rem;
@@ -197,340 +593,3 @@ const Div = styled.div`
   align-items: center;
   justify-content: space-between;
 `;
-
-const TableView = ({ selectedDatabase, selectedTable }) => {
-  const [collections, setCollections] = useState([]);
-  const [newFields, setNewFields] = useState([]);
-  const [maxFields, setMaxFields] = useState(null);
-  const [showSearch, setShowSearch] = useState(false);
-
-  const operators = [
-    { value: ">", label: ">" },
-    { value: "<", label: "<" },
-    { value: "<=", label: "<=" },
-    { value: ">=", label: ">=" },
-    { value: "=", label: "Egale" },
-    { value: "!=", label: "Diff" },
-  ];
-
-  const [searchConditions, setSearchConditions] = useState([
-    { key: "", operator: ">", term: "" },
-  ]);
-
-  const fetchCollections = async () => {
-    try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
-      );
-      setCollections(response.data);
-      console.log("", response.data);
-
-      // Update maxFields when collections are fetched
-      if (
-        response.data &&
-        response.data.documents &&
-        Object.keys(response.data.documents).length > 0
-      ) {
-        const firstDocument =
-          response.data.documents[Object.keys(response.data.documents)[0]];
-        setMaxFields(Object.keys(firstDocument).length);
-      } else {
-        setMaxFields(null);
-      }
-    } catch (error) {
-      console.error("Failed to fetch collections:", error);
-    }
-  };
-
-  const searchDocuments = async () => {
-    try {
-      const query = searchConditions
-        .filter(
-          (condition) => condition.key && condition.operator && condition.term
-        )
-        .map(
-          (condition, index) =>
-            `${condition.key}${condition.operator}${condition.term}${
-              index < searchConditions.length - 1 ? "&" : ""
-            }`
-        )
-        .join("&");
-
-      console.log("je suis la query", query);
-      if (query) {
-        const response = await axios.get(
-          `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}?${query}`
-        );
-        console.log("response", response);
-        setCollections({ documents: response.data });
-      }
-    } catch (error) {
-      console.error("Failed to search documents:", error);
-    }
-  };
-
-  const addSearchField = () => {
-    setSearchConditions([
-      ...searchConditions,
-      { key: "", operator: ">", term: "" },
-    ]);
-  };
-  const deleteSearchField = (index) => {
-    const updatedConditions = [...searchConditions];
-    updatedConditions.splice(index, 1);
-    setSearchConditions(updatedConditions);
-  };
-  const ResetTable = () => {
-    fetchCollections();
-  };
-
-  const addField = () => {
-    if (!maxFields || newFields.length < maxFields) {
-      setNewFields([...newFields, { key: "", value: "" }]);
-    } else {
-      alert(`You can't add more than ${maxFields} fields.`);
-    }
-  };
-
-  const handleFieldChange = (index, key, value) => {
-    const updatedFields = [...newFields];
-    updatedFields[index] = { key, value };
-    setNewFields(updatedFields);
-  };
-
-  const createNewDocument = async () => {
-    const newDocument = newFields.reduce((doc, field) => {
-      doc[field.key] = field.value;
-      console.log(doc);
-      return doc;
-    }, {});
-
-    try {
-      await axios.post(
-        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`,
-        JSON.stringify(newDocument)
-      );
-      alert("Document created");
-      setNewFields([]);
-      fetchCollections();
-    } catch (error) {
-      console.error("Failed to create document:", error);
-    }
-  };
-
-  const updateDocumentAttribute = async (id, attribute, value) => {
-    try {
-      attribute = encodeURIComponent(attribute); // replace spaces with %20
-      value = encodeURIComponent(value);
-      await axios.put(
-        `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}/${id}?${attribute}=${value}`
-      );
-      fetchCollections();
-    } catch (error) {
-      console.error("Failed to update document attribute:", error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const response = await axios.get(
-          `http://127.0.0.1:8000/${selectedDatabase.name}/${selectedTable.name}`
-        );
-        setCollections(response.data);
-        console.log("i'm here", response.data);
-
-        for (const id in response.data.documents) {
-          console.log("i'm id", id);
-        }
-
-        // Update search conditions with the first key by default
-        if (
-          response.data &&
-          response.data.documents &&
-          Object.keys(response.data.documents).length > 0
-        ) {
-          const firstDocument =
-            response.data.documents[Object.keys(response.data.documents)[0]];
-          setMaxFields(Object.keys(firstDocument).length);
-          const firstKey = Object.keys(firstDocument)[0];
-          setSearchConditions((prevConditions) => {
-            const updatedConditions = [...prevConditions];
-            updatedConditions[0].key = firstKey;
-            return updatedConditions;
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch collections:", error);
-      }
-    };
-
-    if (selectedDatabase && selectedTable) {
-      fetchCollections();
-    }
-  }, [selectedDatabase, selectedTable]);
-
-  return (
-    <>
-      <h3>Table: {selectedTable.name}</h3>
-      <Container>
-        <UpperContainer>
-          <Table key={Math.random()}>
-            <thead>
-              <tr key={Math.random()}>
-                {collections &&
-                collections.documents &&
-                Object.keys(collections.documents).length > 0 ? (
-                  Object.keys(
-                    collections.documents[Object.keys(collections.documents)[0]]
-                  ).map((key) => <th key={key.id}>{key}</th>)
-                ) : (
-                  <tr>
-                    <td colSpan="100%">No collections found.</td>
-                  </tr>
-                )}
-              </tr>
-            </thead>
-
-            <tbody>
-              {collections && collections.documents ? (
-                Object.keys(collections.documents).length > 0 ? (
-                  Object.entries(collections.documents).map(([id, row]) => (
-                    <tr key={id}>
-                      {row &&
-                        Object.keys(row).map((column) => (
-                          <td key={column}>
-                            <EditableCell
-                             value={typeof row[column] === 'string' ? row[column].replace(/%20/g, ' ').replace(/%2520/g, ' ') : row[column] || ""}
-                              onValueChange={(newValue) =>
-                                updateDocumentAttribute(id, column, encodeURIComponent(newValue))
-                              }
-                            />
-                          </td>
-                        ))}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="100%">No results found.</td>
-                  </tr>
-                )
-              ) : (
-                <tr>
-                  <td colSpan="100%">No collections found.</td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-
-         
-              <SearchContainer>
-                <SearchConditions>
-                  {searchConditions.map((condition, index) => (
-                    <Div key={index}>
-                      <AddSearchButton onClick={addSearchField}>
-                        +
-                      </AddSearchButton>
-                      {/* Key dropdown */}
-                      <SelectAttribute
-                        value={condition.key}
-                        onChange={(e) => {
-                          setSearchConditions((prevConditions) => {
-                            const updatedConditions = [...prevConditions];
-                            updatedConditions[index].key = e.target.value;
-                            return updatedConditions;
-                          });
-                        }}
-                      >
-                        {collections &&
-                          collections.documents &&
-                          Object.keys(collections.documents).length > 0 &&
-                          Object.keys(
-                            collections.documents[
-                              Object.keys(collections.documents)[0]
-                            ]
-                          ).map((key) => (
-                            <option key={key} value={key}>
-                              {key}
-                            </option>
-                          ))}
-                      </SelectAttribute>
-
-                      {/* Operator dropdown */}
-                      <SelectOperator
-                        value={condition.operator}
-                        onChange={(e) => {
-                          setSearchConditions((prevConditions) => {
-                            const updatedConditions = [...prevConditions];
-                            updatedConditions[index].operator = e.target.value;
-                            return updatedConditions;
-                          });
-                        }}
-                      >
-                        {operators.map((operator) => (
-                          <option key={operator.value} value={operator.value}>
-                            {operator.label}
-                          </option>
-                        ))}
-                      </SelectOperator>
-
-                      {/* Search term input */}
-                      <SearchTerm
-                        type="text"
-                        value={condition.term}
-                        onChange={(e) => {
-                          setSearchConditions((prevConditions) => {
-                            const updatedConditions = [...prevConditions];
-                            updatedConditions[index].term = e.target.value;
-                            return updatedConditions;
-                          });
-                        }}
-                        placeholder="Search term"
-                      />
-                      <DeleteSearchField
-                        onClick={() => deleteSearchField(index)}
-                      >
-                        <RxCrossCircled />
-                      </DeleteSearchField>
-                    </Div>
-                  ))}
-                </SearchConditions>
-
-                <ResetContainer>
-                  <ResetSearchButton onClick={ResetTable}>
-                    reset
-                  </ResetSearchButton>
-                  <SearchButton onClick={searchDocuments}>Search</SearchButton>
-                </ResetContainer>
-              </SearchContainer>
-        </UpperContainer>
-        <LowerContainer>
-          <AddButton onClick={addField}>+</AddButton>
-          {newFields.map((field, index) => (
-            <div key={index}>
-              <FieldInput
-                value={field.key}
-                onChange={(e) =>
-                  handleFieldChange(index, e.target.value, field.value)
-                }
-                placeholder="Key"
-              />
-              <FieldInput
-                value={field.value}
-                onChange={(e) =>
-                  handleFieldChange(index, field.key, e.target.value)
-                }
-                placeholder="Value"
-              />
-            </div>
-          ))}
-          <CreateButton onClick={createNewDocument}>
-            Create document
-          </CreateButton>{" "}
-        </LowerContainer>
-      </Container>
-    </>
-  );
-};
-
-export default TableView;

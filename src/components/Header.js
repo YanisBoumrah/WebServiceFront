@@ -12,7 +12,6 @@ const HeaderContainer = styled.header`
   padding: 20px 0;
   font-size: 1.5em;
   text-align: center;
-  position: sticky;
   top: 0;
   z-index: 100;
 `;
@@ -33,7 +32,7 @@ const Header = () => {
   <HeaderContainer>
   <ContentContainer>
   <Img src={img} ></Img>
-  Watermelon DB
+  Wt-DB
   </ContentContainer>
   </HeaderContainer>
   

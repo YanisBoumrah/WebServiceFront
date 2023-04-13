@@ -10,7 +10,10 @@ import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
   body, html {
+<<<<<<< HEAD
     
+=======
+>>>>>>> c741c3f8f491628942b9b949bfd48adea23362a0
   }
 `; 
 
@@ -20,7 +23,10 @@ const Wrapper = styled.div`
   background-color: rgb(247, 247, 247);
 height:100vh; 
  padding: 20px;
+<<<<<<< HEAD
   /* add this line to hide the scrollbar */
+=======
+>>>>>>> c741c3f8f491628942b9b949bfd48adea23362a0
 
 `;
 
@@ -55,7 +61,6 @@ function App() {
         />
         <MainView selectedTable={selectedTable} selectedDatabase={selectedDatabase} />
       </Wrapper>
-      <Footer />
     </>
   );
 }

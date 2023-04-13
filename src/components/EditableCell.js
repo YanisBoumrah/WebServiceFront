@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 
 const EditableCell = ({ value, onValueChange }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedValue, setEditedValue] = useState(value);
+  const [editedValue, setEditedValue] = useState(value || ""); // Add a conditional check here
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -31,7 +31,9 @@ const EditableCell = ({ value, onValueChange }) => {
       onKeyPress={handleKeyPress}
     />
   ) : (
-    <span onClick={() => setIsEditing(true)}>{value}</span>
+    <span onClick={() => setIsEditing(true)}>
+      {value === null || value === "" ? "-" : value} {/* Add a conditional check to display "-" for null or empty string values */}
+    </span>
   );
 };
 

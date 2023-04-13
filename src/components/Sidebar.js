@@ -214,7 +214,7 @@ const Sidebar = ({
   };
 
   const fetchTables = (databaseName) => {
-    console.log(`http://127.0.0.1:8000/${databaseName}`);
+    // console.log(`http://127.0.0.1:8000/${databaseName}`);
     if (!databaseName) {
       console.error("Database name is undefined");
       return;
@@ -222,7 +222,7 @@ const Sidebar = ({
     axios
       .get(`http://127.0.0.1:8000/${databaseName}`)
       .then((response) => {
-        console.log("Fetched tables:", response.data);
+        // console.log("Fetched tables:", response.data);
         if (response.data && typeof response.data === "object") {
           const tablesArray = response.data.collections.map(
             (tableName, index) => {
@@ -243,11 +243,11 @@ const Sidebar = ({
   };
 
   const fetchCollections = (databaseName, tableName) => {
-    console.log(`http://127.0.0.1:8000/${databaseName}/${tableName}`);
+    // console.log(`http://127.0.0.1:8000/${databaseName}/${tableName}`);
     axios
       .get(`http://127.0.0.1:8000/${databaseName}/${tableName}`)
       .then((response) => {
-        console.log("Fetched collections:", response.data.documents);
+        // console.log("Fetched collections:", response.data.documents);
         // Handle the fetched collections data here
       })
       .catch((error) => console.error("Error fetching collections:", error));
@@ -271,17 +271,17 @@ const Sidebar = ({
       alert("Please enter a database name");
     } else {
       try {
-        console.log("Accuut");
+        // console.log("Accuut");
 
         axios
           .post("http://127.0.0.1:8000/", JSON.stringify(body))
           .then((response) => {
-            console.log("Database created:", response.data);
+            // console.log("Database created:", response.data);
             fetchDatabases();
           })
           .catch((error) => console.error("Error creating database:", error));
       } catch (error) {
-        console.log("it is an error", error.toString());
+        // console.log("it is an error", error.toString());
       }
     }
   };
@@ -296,7 +296,7 @@ const Sidebar = ({
         JSON.stringify(body)
       )
       .then((response) => {
-        console.log("Table created:", response.data);
+        // console.log("Table created:", response.data);
         fetchTables(selectedDatabase.name);
       })
       .catch((error) => console.error("Error creating table:", error));
@@ -308,7 +308,7 @@ const Sidebar = ({
     axios
       .put(`http://127.0.0.1:8000/${oldName}`, JSON.stringify(body))
       .then((response) => {
-        console.log("Database updated:", response.data);
+        // console.log("Database updated:", response.data);
         fetchDatabases();
       })
       .catch((error) => console.error("Error updating database:", error));
@@ -324,33 +324,33 @@ const Sidebar = ({
         JSON.stringify(body)
       )
       .then((response) => {
-        console.log("Table updated:", response.data);
+        // console.log("Table updated:", response.data);
         fetchTables(databaseName);
       })
       .catch((error) => console.error("Error updating table:", error));
   };
 
   const handleAddDatabaseClick = () => {
-    console.log("Add database");
+    // console.log("Add database");
     setModalType("database");
     setShowModal(true);
   };
 
   const handleAddTableClick = (database) => {
-    console.log("Add table to", database.name);
+    // console.log("Add table to", database.name);
     setModalType("table");
     setShowModal(true);
   };
 
   const handleModifyDatabaseClick = (database) => {
-    console.log("Modify database:", database.name);
+    // console.log("Modify database:", database.name);
     setModalType("database");
     setEditedItem(database);
     setShowModal(true);
   };
 
   const handleModifyTableClick = (table) => {
-    console.log("Modify table:", table.name);
+    // console.log("Modify table:", table.name);
     setModalType("table");
     setEditedItem(table);
     setShowModal(true);
@@ -358,44 +358,47 @@ const Sidebar = ({
 
   const handleDeleteDatabaseClick = (database) => {
     const url = `http://127.0.0.1:8000/${database.name}`;
-    console.log(url);
+    // console.log(url);
     // const url = `http://127.0.0.1:8000/Clients`
-    console.log("Delete database:", database.name);
-    axios
+    // console.log("Delete database:", database.name);
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette base de donnée ?")) { 
+      axios
       .delete(url)
       .then((response) => {
-        console.log("Database deleted:", response.data);
+        // console.log("Database deleted:", response.data);
         fetchDatabases(); // fetch updated database list
       })
       .catch((error) => console.error("Error deleting database:", error));
-  };
+  };}
 
   const handleDeleteTableClick = (table) => {
-    console.log("Delete table:", table.name);
+    // console.log("Delete table:", table.name);
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette table?")) {
     axios
       .delete(`http://127.0.0.1:8000/${selectedDatabase.name}/${table.name}`)
       .then((response) => {
-        console.log("Table deleted:", response.data);
+        // console.log("Table deleted:", response.data);
         fetchTables(selectedDatabase.name); // fetch updated table list
       })
       .catch((error) => console.error("Error deleting table:", error));
   };
+}
 
   const handleSave = (name) => {
     if (modalType === "database") {
       if (editedItem) {
-        console.log("Update database:", name);
+        // console.log("Update database:", name);
         updateDatabase(editedItem.name, name);
       } else {
-        console.log("Save database:", name);
+        // console.log("Save database:", name);
         createDatabase(name);
       }
     } else if (modalType === "table") {
       if (editedItem) {
-        console.log("Update table:", name);
+        // console.log("Update table:", name);
         updateTable(selectedDatabase.name, editedItem.name, name);
       } else {
-        console.log("Save table:", name);
+        // console.log("Save table:", name);
         createTable(name);
       }
     }
